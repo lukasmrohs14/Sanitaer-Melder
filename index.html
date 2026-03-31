@@ -10,72 +10,56 @@
         .bg-firma-green { background-color: #006959; }
         .bg-firma-yellow { background-color: #F4B827; }
         .text-firma-green { color: #006959; }
-        
-        /* Sanftes Einblenden der Bestätigung */
-        .fade-in {
-            animation: fadeIn 0.4s ease-out forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 flex items-center justify-center min-h-screen p-4">
 
     <div class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/20">
         
-        <div class="bg-firma-green p-10 text-center relative">
+        <div class="bg-firma-green p-8 text-center relative">
             <div class="absolute top-0 left-0 w-full h-2 bg-firma-yellow"></div>
-            
-            <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" alt="Logo" class="mx-auto mb-4 h-14 object-contain">
-            <h1 class="text-white font-black uppercase tracking-widest text-xl">Service-Ruf</h1>
-            <p class="text-green-100 text-xs font-bold opacity-70 mt-1 uppercase tracking-wider">Sanitär-Management</p>
+            <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" alt="Logo" class="mx-auto mb-4 h-12 object-contain text-white">
+            <h1 class="text-white font-black uppercase tracking-widest text-lg">Service-Ruf</h1>
         </div>
 
-        <div id="main-ui" class="p-8 space-y-4">
-            <p class="text-center text-gray-400 font-black uppercase text-[10px] tracking-[0.2em] mb-4">Meldung auswählen</p>
-            
-            <div class="grid grid-cols-1 gap-4">
-                <button onclick="senden('Seife')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent hover:border-firma-green active:bg-white active:scale-95 transition-all group">
-                    <span class="text-3xl mr-5 group-hover:rotate-12 transition-transform">🧼</span>
-                    <span class="font-black uppercase text-firma-green text-lg">Seife leer</span>
+        <div id="main-ui" class="p-6 space-y-4">
+            <div class="grid grid-cols-1 gap-3">
+                <button onclick="senden('Seife')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:scale-95 transition-all group">
+                    <span class="text-3xl mr-5">🧼</span>
+                    <span class="font-black uppercase text-firma-green text-lg tracking-tight">Seife leer</span>
                 </button>
 
-                <button onclick="senden('Klopapier')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent hover:border-firma-green active:bg-white active:scale-95 transition-all group">
-                    <span class="text-3xl mr-5 group-hover:rotate-12 transition-transform">🧻</span>
-                    <span class="font-black uppercase text-firma-green text-lg">Klopapier</span>
+                <button onclick="senden('Klopapier')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:scale-95 transition-all group">
+                    <span class="text-3xl mr-5">🧻</span>
+                    <span class="font-black uppercase text-firma-green text-lg tracking-tight">Klopapier leer</span>
                 </button>
 
-                <button onclick="senden('Handtücher')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent hover:border-firma-green active:bg-white active:scale-95 transition-all group">
-                    <span class="text-3xl mr-5 group-hover:rotate-12 transition-transform">🖐️</span>
-                    <span class="font-black uppercase text-firma-green text-lg">Handtücher</span>
+                <button onclick="senden('Handtücher')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:scale-95 transition-all group">
+                    <span class="text-3xl mr-5">🖐️</span>
+                    <span class="font-black uppercase text-firma-green text-lg tracking-tight">Handtücher leer</span>
                 </button>
+            </div>
 
-                <button onclick="senden('Reinigung')" class="flex items-center p-5 bg-red-50/50 rounded-2xl border-2 border-transparent hover:border-red-500 active:bg-white active:scale-95 transition-all group mt-2">
-                    <span class="text-3xl mr-5 group-hover:rotate-12 transition-transform">🧹</span>
-                    <div class="text-left">
-                        <span class="font-black uppercase text-red-600 text-lg block leading-none">Reinigung</span>
-                        <span class="text-[9px] font-bold text-red-400 uppercase tracking-tighter">Boden / Waschbecken</span>
-                    </div>
-                </button>
+            <div class="mt-4 pt-4 border-t border-gray-100">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1 text-center">Sonstige Mitteilung an die Immobilienabteilung</label>
+                <textarea id="gast-nachricht" placeholder="Geben Sie hier ggf. weitere Details ein..." 
+                    class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm outline-none focus:border-firma-yellow transition-all resize-none" rows="2"></textarea>
             </div>
         </div>
 
-        <div id="success-ui" class="hidden p-12 text-center fade-in">
-            <div class="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6">
-                <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path>
-                </svg>
+        <div id="success-ui" class="hidden p-10 text-center fade-in">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
             </div>
-            <h2 class="font-black text-2xl text-firma-green uppercase mb-4 leading-tight">Vielen Dank!</h2>
-            <p class="text-gray-600 font-bold text-lg leading-snug">Die Immobilienabteilung wurde informiert.</p>
+            <h2 class="font-black text-xl text-firma-green uppercase mb-2 leading-tight">Vielen Dank!</h2>
+            <p class="text-gray-600 font-bold leading-tight">Die Immobilienabteilung wurde informiert.</p>
             
-            <div class="mt-12">
+            <div class="mt-8">
                 <div class="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                    <div id="progress-bar" class="h-full bg-firma-yellow w-0 transition-all duration-[6000ms] ease-linear"></div>
+                    <div id="progress-bar" class="h-full bg-firma-yellow w-0 transition-all duration-[3000ms] ease-linear"></div>
                 </div>
-                <p class="text-[9px] text-gray-300 mt-3 font-black uppercase tracking-[0.2em]">Bereit für nächste Eingabe</p>
             </div>
         </div>
     </div>
@@ -86,33 +70,29 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         async function senden(typ) {
-            // UI Switch
+            const nachricht = document.getElementById('gast-nachricht').value;
+
             document.getElementById('main-ui').classList.add('hidden');
             document.getElementById('success-ui').classList.remove('hidden');
             
-            // Progressbar Animation starten
-            setTimeout(() => {
-                document.getElementById('progress-bar').style.width = '100%';
-            }, 50);
+            setTimeout(() => { document.getElementById('progress-bar').style.width = '100%'; }, 50);
 
             try {
-                // In Datenbank speichern
                 const { error } = await _supabase
                     .from('meldungen')
-                    .insert([{ typ: typ, status: 'offen' }]);
+                    .insert([{ typ: typ, nachricht: nachricht, status: 'offen' }]);
 
                 if (error) throw error;
 
-                // Nach 6 Sekunden (genug Zeit zum Lesen) zurücksetzen
                 setTimeout(() => {
                     document.getElementById('main-ui').classList.remove('hidden');
                     document.getElementById('success-ui').classList.add('hidden');
                     document.getElementById('progress-bar').style.width = '0%';
-                }, 6000);
+                    document.getElementById('gast-nachricht').value = '';
+                }, 3000);
 
             } catch (err) {
-                console.error("Fehler:", err);
-                alert("Verbindung unterbrochen. Bitte Seite neu laden.");
+                alert("Fehler bei der Übertragung.");
                 location.reload();
             }
         }
