@@ -32,11 +32,21 @@
         </div>
 
         <div id="admin-content" class="hidden mt-6 space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Aktuelle Reinigungskraft:</label>
+                <select id="admin-name-select" class="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg font-bold text-[#006959] outline-none focus:border-[#F4B827]">
+                    <option value="Felix">Felix</option>
+                    <option value="Birgit">Birgit</option>
+                    <option value="Gast-Reinigung">Gast-Reinigung</option>
+                </select>
+            </div>
+
             <div class="flex justify-between items-center px-2">
                 <h2 class="text-firma-green font-black uppercase tracking-tight">Offene Aufgaben</h2>
-                <button onclick="loadMeldungen()" class="text-[10px] bg-gray-200 text-gray-600 px-3 py-1 rounded-full font-bold hover:bg-gray-300 uppercase">
-                    🔄 Refresh
-                </button>
+                <div class="flex gap-2">
+                    <button onclick="testNotification()" class="text-[8px] bg-blue-100 text-blue-600 px-2 py-1 rounded-full font-bold uppercase">🔔 Test Push</button>
+                    <button onclick="loadMeldungen()" class="text-[10px] bg-gray-200 text-gray-600 px-3 py-1 rounded-full font-bold hover:bg-gray-300 uppercase">🔄 Refresh</button>
+                </div>
             </div>
             
             <div id="liste" class="space-y-3"></div>
@@ -48,39 +58,45 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 1. Browser-Benachrichtigungen anfragen
     function requestNotificationPermission() {
-        if ("Notification" in window && Notification.permission !== "granted") {
-            Notification.requestPermission();
-        }
-    }
-
-    // 2. Benachrichtigung senden
-    function sendPushNotification(typ) {
-        if (Notification.permission === "granted") {
-            new Notification("Neue Reinigungsmeldung!", {
-                body: "Bedarf gemeldet: " + typ,
-                icon: "logo.png" // Stellt sicher, dass das Logo im GitHub-Ordner liegt
+        if ("Notification" in window) {
+            Notification.requestPermission().then(permission => {
+                console.log("Benachrichtigungs-Status:", permission);
             });
         }
     }
 
-    // 3. SICHERER LOGIN ÜBER DIE DATENBANK
+    function sendPushNotification(typ) {
+        if (Notification.permission === "granted") {
+            new Notification("Neue Reinigungsmeldung!", {
+                body: "Bedarf gemeldet: " + typ,
+                icon: "VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png"
+            });
+        }
+    }
+
+    // Hilfsfunktion zum manuellen Testen
+    function testNotification() {
+        if (Notification.permission !== "granted") {
+            alert("Bitte erlaube erst Benachrichtigungen im Browser (Klick auf das Schloss-Symbol links neben der URL).");
+            requestNotificationPermission();
+        } else {
+            sendPushNotification("TEST-ALARM");
+        }
+    }
+
     async function checkPin() {
         const eingabe = document.getElementById('pin').value;
         try {
-            const { data: isValid, error } = await _supabase
-                .rpc('check_admin_pin', { input_pin: eingabe });
-
+            const { data: isValid, error } = await _supabase.rpc('check_admin_pin', { input_pin: eingabe });
             if (error) throw error;
 
             if (isValid) {
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('admin-content').classList.remove('hidden');
-                
-                requestNotificationPermission(); // Berechtigung nach Login anfragen
+                requestNotificationPermission();
                 loadMeldungen();
-                initRealtime(); // Echtzeit-Überwachung starten
+                initRealtime();
             } else {
                 alert("Falsche PIN!");
                 document.getElementById('pin').value = '';
@@ -91,22 +107,16 @@
         }
     }
 
-    // 4. ECHTZEIT-ÜBERWACHUNG STARTEN
     function initRealtime() {
         _supabase
             .channel('schema-db-changes')
-            .on('postgres_changes', 
-                { event: 'INSERT', schema: 'public', table: 'meldungen' }, 
-                payload => {
-                    console.log('Neue Meldung erhalten!', payload);
-                    sendPushNotification(payload.new.typ); // Benachrichtigung abschicken
-                    loadMeldungen(); // Liste sofort aktualisieren
-                }
-            )
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'meldungen' }, payload => {
+                sendPushNotification(payload.new.typ);
+                loadMeldungen();
+            })
             .subscribe();
     }
 
-    // 5. MELDUNGEN LADEN
     async function loadMeldungen() {
         try {
             const { data, error } = await _supabase
@@ -116,73 +126,46 @@
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-
             const liste = document.getElementById('liste');
             liste.innerHTML = '';
 
             if (data.length === 0) {
-                liste.innerHTML = `
-                    <div class="bg-white p-10 rounded-2xl shadow-sm text-center border-2 border-dashed border-gray-200">
-                        <p class="text-gray-400 font-bold uppercase tracking-widest">✨ Alles sauber!</p>
-                    </div>`;
+                liste.innerHTML = `<div class="bg-white p-10 rounded-2xl shadow-sm text-center border-2 border-dashed border-gray-200"><p class="text-gray-400 font-bold uppercase tracking-widest">✨ Alles sauber!</p></div>`;
                 return;
             }
 
             data.forEach(m => {
                 const div = document.createElement('div');
                 div.className = "bg-white p-5 rounded-2xl shadow-md border-l-8 border-firma-green flex justify-between items-center transition-all hover:shadow-lg";
-                
                 let icon = m.typ === 'seife' ? '🧼' : m.typ === 'klopapier' ? '🧻' : m.typ === 'handtuch' ? '🖐️' : '⚠️';
-                
                 div.innerHTML = `
                     <div class="flex-1 pr-4">
-                        <p class="font-black text-firma-green uppercase text-sm flex items-center gap-2">
-                            <span>${icon}</span> ${m.typ}
-                        </p>
-                        <p class="text-[10px] text-gray-400 font-bold mb-1 italic">
-                            ${new Date(m.created_at).toLocaleString('de-DE')}
-                        </p>
+                        <p class="font-black text-firma-green uppercase text-sm flex items-center gap-2"><span>${icon}</span> ${m.typ}</p>
+                        <p class="text-[10px] text-gray-400 font-bold mb-1 italic">${new Date(m.created_at).toLocaleString('de-DE')}</p>
                         ${m.nachricht ? `<p class="text-sm text-gray-600 leading-tight bg-gray-50 p-2 rounded-lg border border-gray-100 italic">"${m.nachricht}"</p>` : ''}
                     </div>
-                    <button onclick="erledigen('${m.id}')" 
-                        class="bg-firma-yellow text-white px-4 py-3 rounded-xl font-black text-xs shadow-md hover:bg-[#d9a322] active:scale-90 transition-all uppercase whitespace-nowrap">
-                        Erledigt
-                    </button>
-                `;
+                    <button onclick="erledigen('${m.id}')" class="bg-firma-yellow text-white px-4 py-3 rounded-xl font-black text-xs shadow-md hover:bg-[#d9a322] active:scale-90 transition-all uppercase whitespace-nowrap">Erledigt</button>`;
                 liste.appendChild(div);
             });
-        } catch (err) {
-            console.error("Ladefehler:", err);
-        }
+        } catch (err) { console.error("Ladefehler:", err); }
     }
 
-    // 6. ERLEDIGEN MIT TRACKING (NAME & ZEIT)
     async function erledigen(id) {
-        const name = prompt("Wer erledigt diese Aufgabe? (z.B. Felix oder Birgit)");
-        if (!name) return;
+        // Zieht den Namen jetzt direkt aus dem Dropdown statt prompt()
+        const name = document.getElementById('admin-name-select').value;
 
         try {
             const { error } = await _supabase
                 .from('meldungen')
-                .update({ 
-                    status: 'erledigt',
-                    erledigt_von: name,
-                    erledigt_am: new Date().toISOString()
-                })
+                .update({ status: 'erledigt', erledigt_von: name, erledigt_am: new Date().toISOString() })
                 .eq('id', id);
-
             if (error) throw error;
             loadMeldungen();
-        } catch (err) {
-            alert("Fehler beim Aktualisieren: " + err.message);
-        }
+        } catch (err) { alert("Fehler: " + err.message); }
     }
 
-    // Fallback Refresh (alle 30 Sek), falls Realtime mal hakt
     setInterval(() => {
-        if (!document.getElementById('admin-content').classList.contains('hidden')) {
-            loadMeldungen();
-        }
+        if (!document.getElementById('admin-content').classList.contains('hidden')) loadMeldungen();
     }, 30000);
 </script>
 </body>
