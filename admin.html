@@ -43,115 +43,147 @@
         </div>
     </div>
 
-    <script>
-        const SUPABASE_URL = 'https://khptivsvjngoicpknecj.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<script>
+    const SUPABASE_URL = 'https://khptivsvjngoicpknecj.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 1. SICHERER LOGIN ÜBER DIE DATENBANK
-        async function checkPin() {
-            const eingabe = document.getElementById('pin').value;
-            
-            try {
-                // Ruft die sichere SQL-Funktion in Supabase auf
-                const { data: isValid, error } = await _supabase
-                    .rpc('check_admin_pin', { input_pin: eingabe });
-
-                if (error) throw error;
-
-                if (isValid) {
-                    document.getElementById('login-section').classList.add('hidden');
-                    document.getElementById('admin-content').classList.remove('hidden');
-                    loadMeldungen();
-                } else {
-                    alert("Falsche PIN!");
-                    document.getElementById('pin').value = '';
-                }
-            } catch (err) {
-                console.error("Login-Fehler:", err);
-                alert("Verbindungsfehler zur Datenbank.");
-            }
+    // 1. Browser-Benachrichtigungen anfragen
+    function requestNotificationPermission() {
+        if ("Notification" in window && Notification.permission !== "granted") {
+            Notification.requestPermission();
         }
+    }
 
-        // 2. MELDUNGEN LADEN
-        async function loadMeldungen() {
-            try {
-                const { data, error } = await _supabase
-                    .from('meldungen')
-                    .select('*')
-                    .eq('status', 'offen')
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-
-                const liste = document.getElementById('liste');
-                liste.innerHTML = '';
-
-                if (data.length === 0) {
-                    liste.innerHTML = `
-                        <div class="bg-white p-10 rounded-2xl shadow-sm text-center border-2 border-dashed border-gray-200">
-                            <p class="text-gray-400 font-bold uppercase tracking-widest">✨ Alles sauber!</p>
-                        </div>`;
-                    return;
-                }
-
-                data.forEach(m => {
-                    const div = document.createElement('div');
-                    div.className = "bg-white p-5 rounded-2xl shadow-md border-l-8 border-firma-green flex justify-between items-center transition-all hover:shadow-lg";
-                    
-                    let icon = m.typ === 'seife' ? '🧼' : m.typ === 'klopapier' ? '🧻' : m.typ === 'handtuch' ? '🖐️' : '⚠️';
-                    
-                    div.innerHTML = `
-                        <div class="flex-1 pr-4">
-                            <p class="font-black text-firma-green uppercase text-sm flex items-center gap-2">
-                                <span>${icon}</span> ${m.typ}
-                            </p>
-                            <p class="text-[10px] text-gray-400 font-bold mb-1 italic">
-                                ${new Date(m.created_at).toLocaleString('de-DE')}
-                            </p>
-                            ${m.nachricht ? `<p class="text-sm text-gray-600 leading-tight bg-gray-50 p-2 rounded-lg border border-gray-100 italic">"${m.nachricht}"</p>` : ''}
-                        </div>
-                        <button onclick="erledigen('${m.id}')" 
-                            class="bg-firma-yellow text-white px-4 py-3 rounded-xl font-black text-xs shadow-md hover:bg-[#d9a322] active:scale-90 transition-all uppercase whitespace-nowrap">
-                            Erledigt
-                        </button>
-                    `;
-                    liste.appendChild(div);
-                });
-            } catch (err) {
-                console.error("Ladefehler:", err);
-            }
+    // 2. Benachrichtigung senden
+    function sendPushNotification(typ) {
+        if (Notification.permission === "granted") {
+            new Notification("Neue Reinigungsmeldung!", {
+                body: "Bedarf gemeldet: " + typ,
+                icon: "logo.png" // Stellt sicher, dass das Logo im GitHub-Ordner liegt
+            });
         }
+    }
 
-        // 3. ERLEDIGEN MIT TRACKING (NAME & ZEIT)
-        async function erledigen(id) {
-            const name = prompt("Wer erledigt diese Aufgabe? (z.B. Felix oder Birgit)");
-            
-            if (!name) return;
+    // 3. SICHERER LOGIN ÜBER DIE DATENBANK
+    async function checkPin() {
+        const eingabe = document.getElementById('pin').value;
+        try {
+            const { data: isValid, error } = await _supabase
+                .rpc('check_admin_pin', { input_pin: eingabe });
 
-            try {
-                const { error } = await _supabase
-                    .from('meldungen')
-                    .update({ 
-                        status: 'erledigt',
-                        erledigt_von: name,
-                        erledigt_am: new Date().toISOString()
-                    })
-                    .eq('id', id);
+            if (error) throw error;
 
-                if (error) throw error;
+            if (isValid) {
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('admin-content').classList.remove('hidden');
+                
+                requestNotificationPermission(); // Berechtigung nach Login anfragen
                 loadMeldungen();
-            } catch (err) {
-                alert("Fehler beim Aktualisieren: " + err.message);
+                initRealtime(); // Echtzeit-Überwachung starten
+            } else {
+                alert("Falsche PIN!");
+                document.getElementById('pin').value = '';
             }
+        } catch (err) {
+            console.error("Login-Fehler:", err);
+            alert("Verbindungsfehler zur Datenbank.");
         }
+    }
 
-        // Auto-Refresh alle 10 Sekunden
-        setInterval(() => {
-            if (!document.getElementById('admin-content').classList.contains('hidden')) {
-                loadMeldungen();
+    // 4. ECHTZEIT-ÜBERWACHUNG STARTEN
+    function initRealtime() {
+        _supabase
+            .channel('schema-db-changes')
+            .on('postgres_changes', 
+                { event: 'INSERT', schema: 'public', table: 'meldungen' }, 
+                payload => {
+                    console.log('Neue Meldung erhalten!', payload);
+                    sendPushNotification(payload.new.typ); // Benachrichtigung abschicken
+                    loadMeldungen(); // Liste sofort aktualisieren
+                }
+            )
+            .subscribe();
+    }
+
+    // 5. MELDUNGEN LADEN
+    async function loadMeldungen() {
+        try {
+            const { data, error } = await _supabase
+                .from('meldungen')
+                .select('*')
+                .eq('status', 'offen')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            const liste = document.getElementById('liste');
+            liste.innerHTML = '';
+
+            if (data.length === 0) {
+                liste.innerHTML = `
+                    <div class="bg-white p-10 rounded-2xl shadow-sm text-center border-2 border-dashed border-gray-200">
+                        <p class="text-gray-400 font-bold uppercase tracking-widest">✨ Alles sauber!</p>
+                    </div>`;
+                return;
             }
-        }, 10000);
-    </script>
+
+            data.forEach(m => {
+                const div = document.createElement('div');
+                div.className = "bg-white p-5 rounded-2xl shadow-md border-l-8 border-firma-green flex justify-between items-center transition-all hover:shadow-lg";
+                
+                let icon = m.typ === 'seife' ? '🧼' : m.typ === 'klopapier' ? '🧻' : m.typ === 'handtuch' ? '🖐️' : '⚠️';
+                
+                div.innerHTML = `
+                    <div class="flex-1 pr-4">
+                        <p class="font-black text-firma-green uppercase text-sm flex items-center gap-2">
+                            <span>${icon}</span> ${m.typ}
+                        </p>
+                        <p class="text-[10px] text-gray-400 font-bold mb-1 italic">
+                            ${new Date(m.created_at).toLocaleString('de-DE')}
+                        </p>
+                        ${m.nachricht ? `<p class="text-sm text-gray-600 leading-tight bg-gray-50 p-2 rounded-lg border border-gray-100 italic">"${m.nachricht}"</p>` : ''}
+                    </div>
+                    <button onclick="erledigen('${m.id}')" 
+                        class="bg-firma-yellow text-white px-4 py-3 rounded-xl font-black text-xs shadow-md hover:bg-[#d9a322] active:scale-90 transition-all uppercase whitespace-nowrap">
+                        Erledigt
+                    </button>
+                `;
+                liste.appendChild(div);
+            });
+        } catch (err) {
+            console.error("Ladefehler:", err);
+        }
+    }
+
+    // 6. ERLEDIGEN MIT TRACKING (NAME & ZEIT)
+    async function erledigen(id) {
+        const name = prompt("Wer erledigt diese Aufgabe? (z.B. Felix oder Birgit)");
+        if (!name) return;
+
+        try {
+            const { error } = await _supabase
+                .from('meldungen')
+                .update({ 
+                    status: 'erledigt',
+                    erledigt_von: name,
+                    erledigt_am: new Date().toISOString()
+                })
+                .eq('id', id);
+
+            if (error) throw error;
+            loadMeldungen();
+        } catch (err) {
+            alert("Fehler beim Aktualisieren: " + err.message);
+        }
+    }
+
+    // Fallback Refresh (alle 30 Sek), falls Realtime mal hakt
+    setInterval(() => {
+        if (!document.getElementById('admin-content').classList.contains('hidden')) {
+            loadMeldungen();
+        }
+    }, 30000);
+</script>
 </body>
 </html>
