@@ -11,13 +11,17 @@
         .bg-firma-yellow { background-color: #F4B827; }
         .border-firma-green { border-color: #006959; }
         .text-firma-green { color: #006959; }
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
 <body class="bg-gray-100 p-4 font-sans text-gray-800">
     <div class="max-w-md mx-auto">
         
         <div class="bg-firma-green p-6 rounded-t-2xl shadow-lg text-center border-b-4 border-[#F4B827]">
-            <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" alt="Logo" class="mx-auto mb-2 h-12 object-contain">
+            <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" alt="Logo" 
+                class="mx-auto mb-2 h-12 object-contain" 
+                style="filter: brightness(0) invert(1);">
             <h1 class="text-white font-black uppercase tracking-widest text-lg">Reinigung-Dashboard</h1>
         </div>
         
@@ -31,21 +35,22 @@
             </button>
         </div>
 
-        <div id="admin-content" class="hidden mt-6 space-y-4">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
-                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Aktuelle Reinigungskraft:</label>
-                <select id="admin-name-select" class="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg font-bold text-[#006959] outline-none focus:border-[#F4B827]">
-                    <option value="Felix">Felix</option>
-                    <option value="Birgit">Birgit</option>
-                    <option value="Gast-Reinigung">Gast-Reinigung</option>
+        <div id="admin-content" class="hidden mt-6 space-y-4 fade-in">
+            
+            <div class="bg-white p-5 rounded-2xl shadow-md border border-gray-100 mb-6">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 px-1 text-center">Aktuelle Reinigungskraft</label>
+                <select id="admin-name-select" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-black text-[#006959] text-center uppercase tracking-widest outline-none focus:border-[#F4B827] transition-all cursor-pointer">
+                    <option value="Felix">👤 Felix</option>
+                    <option value="Birgit">👤 Birgit</option>
+                    <option value="Gast-Reinigung">🛠️ Gast-Reinigung</option>
                 </select>
             </div>
 
             <div class="flex justify-between items-center px-2">
                 <h2 class="text-firma-green font-black uppercase tracking-tight">Offene Aufgaben</h2>
                 <div class="flex gap-2">
-                    <button onclick="testNotification()" class="text-[8px] bg-blue-100 text-blue-600 px-2 py-1 rounded-full font-bold uppercase">🔔 Test Push</button>
-                    <button onclick="loadMeldungen()" class="text-[10px] bg-gray-200 text-gray-600 px-3 py-1 rounded-full font-bold hover:bg-gray-300 uppercase">🔄 Refresh</button>
+                    <button onclick="testNotification()" class="text-[8px] bg-blue-50 text-blue-600 px-2 py-1 rounded-full font-bold uppercase hover:bg-blue-100 transition-colors">🔔 Test Push</button>
+                    <button onclick="loadMeldungen()" class="text-[10px] bg-gray-200 text-gray-600 px-3 py-1 rounded-full font-bold hover:bg-gray-300 uppercase transition-colors">🔄 Refresh</button>
                 </div>
             </div>
             
@@ -75,10 +80,9 @@
         }
     }
 
-    // Hilfsfunktion zum manuellen Testen
     function testNotification() {
         if (Notification.permission !== "granted") {
-            alert("Bitte erlaube erst Benachrichtigungen im Browser (Klick auf das Schloss-Symbol links neben der URL).");
+            alert("Bitte erlaube erst Benachrichtigungen im Browser.");
             requestNotificationPermission();
         } else {
             sendPushNotification("TEST-ALARM");
@@ -130,14 +134,17 @@
             liste.innerHTML = '';
 
             if (data.length === 0) {
-                liste.innerHTML = `<div class="bg-white p-10 rounded-2xl shadow-sm text-center border-2 border-dashed border-gray-200"><p class="text-gray-400 font-bold uppercase tracking-widest">✨ Alles sauber!</p></div>`;
+                liste.innerHTML = `
+                    <div class="bg-white p-10 rounded-2xl shadow-sm text-center border-2 border-dashed border-gray-200">
+                        <p class="text-gray-400 font-bold uppercase tracking-widest text-xs">✨ Alles erledigt!</p>
+                    </div>`;
                 return;
             }
 
             data.forEach(m => {
                 const div = document.createElement('div');
-                div.className = "bg-white p-5 rounded-2xl shadow-md border-l-8 border-firma-green flex justify-between items-center transition-all hover:shadow-lg";
-                let icon = m.typ === 'seife' ? '🧼' : m.typ === 'klopapier' ? '🧻' : m.typ === 'handtuch' ? '🖐️' : '⚠️';
+                div.className = "bg-white p-5 rounded-2xl shadow-md border-l-8 border-firma-green flex justify-between items-center transition-all hover:shadow-lg fade-in";
+                let icon = m.typ === 'Seife' ? '🧼' : m.typ === 'Klopapier' ? '🧻' : m.typ === 'Handtücher' ? '🖐️' : '⚠️';
                 div.innerHTML = `
                     <div class="flex-1 pr-4">
                         <p class="font-black text-firma-green uppercase text-sm flex items-center gap-2"><span>${icon}</span> ${m.typ}</p>
@@ -151,9 +158,7 @@
     }
 
     async function erledigen(id) {
-        // Zieht den Namen jetzt direkt aus dem Dropdown statt prompt()
         const name = document.getElementById('admin-name-select').value;
-
         try {
             const { error } = await _supabase
                 .from('meldungen')
