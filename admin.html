@@ -6,37 +6,52 @@
     <title>Admin - Sanitär Melder</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .bg-firma-green { background-color: #006959; }
+        .bg-firma-yellow { background-color: #F4B827; }
+        .border-firma-green { border-color: #006959; }
+        .text-firma-green { color: #006959; }
+    </style>
 </head>
-<body class="bg-slate-900 text-white p-4">
+<body class="bg-gray-100 p-4 font-sans text-gray-800">
     <div class="max-w-md mx-auto">
-        <h1 class="text-2xl font-bold mb-6 text-center">Reinigung-Dashboard</h1>
         
-        <div id="login-section" class="bg-slate-800 p-6 rounded-lg shadow-xl">
-            <p class="mb-4 text-center text-slate-400">Bitte PIN eingeben:</p>
-            <input type="password" id="pin" placeholder="PIN" class="w-full p-3 bg-slate-700 rounded-lg mb-4 text-center text-2xl outline-none border-2 border-transparent focus:border-blue-500">
-            <button onclick="checkPin()" class="w-full bg-blue-600 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors">Einloggen</button>
+        <div class="bg-firma-green p-6 rounded-t-2xl shadow-lg text-center border-b-4 border-[#F4B827]">
+            <img src="logo.png" alt="Logo" class="mx-auto mb-2 h-12 object-contain brightness-0 invert">
+            <h1 class="text-white font-black uppercase tracking-widest text-lg">Reinigung-Dashboard</h1>
+        </div>
+        
+        <div id="login-section" class="bg-white p-8 rounded-b-2xl shadow-xl border-x border-b border-gray-200">
+            <p class="mb-4 text-center text-gray-500 font-medium">Autorisierung erforderlich</p>
+            <input type="password" id="pin" placeholder="PIN eingeben" 
+                class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl mb-4 text-center text-2xl outline-none focus:border-[#F4B827] transition-all">
+            <button onclick="checkPin()" 
+                class="w-full bg-firma-yellow text-white py-4 rounded-xl font-black uppercase shadow-lg hover:bg-[#d9a322] active:scale-95 transition-all">
+                Einloggen
+            </button>
         </div>
 
-        <div id="admin-content" class="hidden space-y-4">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-semibold">Offene Aufgaben</h2>
-                <button onclick="loadMeldungen()" class="text-xs bg-slate-700 px-3 py-1 rounded hover:bg-slate-600">🔄 Aktualisieren</button>
+        <div id="admin-content" class="hidden mt-6 space-y-4">
+            <div class="flex justify-between items-center px-2">
+                <h2 class="text-firma-green font-black uppercase tracking-tight">Offene Aufgaben</h2>
+                <button onclick="loadMeldungen()" class="text-[10px] bg-gray-200 text-gray-600 px-3 py-1 rounded-full font-bold hover:bg-gray-300 uppercase">
+                    🔄 Refresh
+                </button>
             </div>
+            
             <div id="liste" class="space-y-3">
                 </div>
         </div>
     </div>
 
     <script>
-        // 1. Verbindung zu Supabase herstellen
         const SUPABASE_URL = 'https://khptivsvjngoicpknecj.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 2. PIN Prüfung
         function checkPin() {
             const eingabe = document.getElementById('pin').value;
-            if (eingabe === "1234") { // Hier kannst du deine PIN ändern
+            if (eingabe === "1234") {
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('admin-content').classList.remove('hidden');
                 loadMeldungen();
@@ -46,13 +61,12 @@
             }
         }
 
-        // 3. Meldungen aus der Datenbank laden
         async function loadMeldungen() {
             try {
                 const { data, error } = await _supabase
                     .from('meldungen')
                     .select('*')
-                    .eq('status', 'offen') // Nur die anzeigen, die noch nicht erledigt sind
+                    .eq('status', 'offen')
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
@@ -61,33 +75,41 @@
                 liste.innerHTML = '';
 
                 if (data.length === 0) {
-                    liste.innerHTML = '<p class="text-center text-slate-500 py-10">Alles erledigt! Keine offenen Meldungen.</p>';
+                    liste.innerHTML = `
+                        <div class="bg-white p-10 rounded-2xl shadow-sm text-center border-2 border-dashed border-gray-200">
+                            <p class="text-gray-400 font-bold uppercase tracking-widest">✨ Alles sauber!</p>
+                        </div>`;
                     return;
                 }
 
                 data.forEach(m => {
                     const div = document.createElement('div');
-                    div.className = "bg-slate-800 p-4 rounded-lg flex justify-between items-center border-l-4 border-blue-500 shadow-md";
+                    div.className = "bg-white p-5 rounded-2xl shadow-md border-l-8 border-firma-green flex justify-between items-center transition-all hover:shadow-lg";
                     
-                    // Icon je nach Typ
                     let icon = m.typ === 'seife' ? '🧼' : m.typ === 'klopapier' ? '🧻' : m.typ === 'handtuch' ? '🖐️' : '⚠️';
                     
                     div.innerHTML = `
-                        <div class="flex-1">
-                            <p class="font-bold uppercase text-sm">${icon} ${m.typ}</p>
-                            <p class="text-xs text-slate-400">${new Date(m.created_at).toLocaleString('de-DE')}</p>
-                            ${m.nachricht ? `<p class="text-sm italic text-slate-300 mt-1">"${m.nachricht}"</p>` : ''}
+                        <div class="flex-1 pr-4">
+                            <p class="font-black text-firma-green uppercase text-sm flex items-center gap-2">
+                                <span>${icon}</span> ${m.typ}
+                            </p>
+                            <p class="text-[10px] text-gray-400 font-bold mb-1 italic">
+                                ${new Date(m.created_at).toLocaleString('de-DE')}
+                            </p>
+                            ${m.nachricht ? `<p class="text-sm text-gray-600 leading-tight bg-gray-50 p-2 rounded-lg border border-gray-100 italic">"${m.nachricht}"</p>` : ''}
                         </div>
-                        <button onclick="erledigen('${m.id}')" class="ml-4 bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-bold text-sm transition-colors shadow">Erledigt</button>
+                        <button onclick="erledigen('${m.id}')" 
+                            class="bg-firma-yellow text-white px-4 py-3 rounded-xl font-black text-xs shadow-md hover:bg-[#d9a322] active:scale-90 transition-all uppercase whitespace-nowrap">
+                            Erledigt
+                        </button>
                     `;
                     liste.appendChild(div);
                 });
             } catch (err) {
-                console.error("Fehler beim Laden:", err);
+                console.error("Ladefehler:", err);
             }
         }
 
-        // 4. Meldung als erledigt markieren
         async function erledigen(id) {
             try {
                 const { error } = await _supabase
@@ -96,15 +118,13 @@
                     .eq('id', id);
 
                 if (error) throw error;
-
-                // Liste sofort neu laden, damit die erledigte Meldung verschwindet
                 loadMeldungen();
             } catch (err) {
-                alert("Fehler beim Aktualisieren: " + err.message);
+                alert("Fehler: " + err.message);
             }
         }
 
-        // 5. Automatischer Refresh alle 10 Sekunden (optional)
+        // Auto-Refresh alle 10 Sekunden
         setInterval(() => {
             if (!document.getElementById('admin-content').classList.contains('hidden')) {
                 loadMeldungen();
