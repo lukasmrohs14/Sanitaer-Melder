@@ -33,76 +33,73 @@
         <p class="text-xl">Deine Meldung wurde aufgenommen.</p>
     </div>
 
-    <script>
-        // Deine Supabase Daten
-        const SUPABASE_URL = 'https://khptivsvjngoicpknecj.supabase.com';
-        const SUPABASE_KEY = 'sb_publishable_TZrfYFsdkGE0Q61QY69P2Q_Pxr3LQl-'; // Dein Anon-Key
-        
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  <script>
+    // Deine Supabase Daten
+    const SUPABASE_URL = 'https://khptivsvjngoicpknecj.supabase.co';
+    // WICHTIG: Kopiere den Key exakt so, wie er in deinem Supabase Dashboard steht!
+    const SUPABASE_KEY = 'sb_publishable_TZrFYFsdkGE0Q61QY69P2Q_Pxr3LQ1-'; 
+    
+    // Initialisierung
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Funktion zum Absenden einer Meldung
-        async function melde(art) {
-            const nachricht = document.getElementById('freitext').value;
-            
+    async function melde(art) {
+        const nachricht = document.getElementById('freitext').value;
+        
+        try {
             const { error } = await _supabase
                 .from('meldungen')
                 .insert([{ typ: art, nachricht: nachricht, status: 'offen' }]);
 
-            if (!error) {
-                zeigeDanke();
-                document.getElementById('freitext').value = '';
-            } else {
-                alert("Fehler: " + error.message);
-            }
+            if (error) throw error;
+            zeigeDanke();
+            document.getElementById('freitext').value = '';
+        } catch (err) {
+            console.error("Supabase Fehler:", err);
+            alert("Verbindung fehlgeschlagen: " + err.message);
         }
+    }
 
-        // Zeigt die Bestätigung für 5 Sekunden
-        function zeigeDanke() {
-            document.getElementById('danke').classList.remove('hidden');
-            setTimeout(() => {
-                document.getElementById('danke').classList.add('hidden');
-                checkStatus(); // Status sofort aktualisieren
-            }, 5000);
-        }
+    function zeigeDanke() {
+        document.getElementById('danke').classList.remove('hidden');
+        setTimeout(() => {
+            document.getElementById('danke').classList.add('hidden');
+            checkStatus();
+        }, 4000);
+    }
 
-        // Prüft, welche Buttons gesperrt werden müssen
-        async function checkStatus() {
+    async function checkStatus() {
+        try {
             const { data, error } = await _supabase
                 .from('meldungen')
                 .select('typ')
                 .eq('status', 'offen');
 
-            if (error) return;
+            if (error) throw error;
 
-            // Alle Buttons erst mal aktivieren
             const types = ['seife', 'klopapier', 'handtuch'];
             types.forEach(t => {
                 const btn = document.getElementById('btn-' + t);
+                if (!btn) return;
+                
+                // Reset
                 btn.disabled = false;
-                btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                btn.classList.remove('bg-gray-400');
                 btn.classList.add('bg-blue-500');
-                // Originaltext wiederherstellen
-                if(t === 'seife') btn.innerText = '🧼 Seife leer';
-                if(t === 'klopapier') btn.innerText = '🧻 Klopapier leer';
-                if(t === 'handtuch') btn.innerText = '🖐️ Handtücher leer';
-            });
 
-            // Aktive Meldungen ausgrauen
-            data.forEach(m => {
-                const btn = document.getElementById('btn-' + m.typ);
-                if(btn) {
+                // Sperren falls offen
+                if (data.some(m => m.typ === t)) {
                     btn.disabled = true;
                     btn.classList.remove('bg-blue-500');
-                    btn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                    btn.classList.add('bg-gray-400');
                     btn.innerText = "Bereits gemeldet";
                 }
             });
+        } catch (err) {
+            console.log("Status-Check fehlgeschlagen (evtl. noch keine Daten)");
         }
+    }
 
-        // Beim Start den Status prüfen
-        checkStatus();
-        // Alle 30 Sekunden automatisch prüfen (Echtzeit-Gefühl)
-        setInterval(checkStatus, 30000);
-    </script>
+    checkStatus();
+</script>
 </body>
 </html>
