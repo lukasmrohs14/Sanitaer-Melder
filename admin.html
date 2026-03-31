@@ -7,16 +7,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Firmenfarben definieren */
         .text-firma-green { color: #006959; }
         .bg-firma-green { background-color: #006959; }
         .bg-firma-yellow { background-color: #F4B827; }
         .border-firma-green { border-color: #006959; }
-        
-        /* Verhindert den blauen Standard-Rahmen beim Tippen */
         * { -webkit-tap-highlight-color: transparent; }
-
-        /* Animation für neue Aufgaben */
         .fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
     </style>
@@ -27,11 +22,9 @@
         
         <div class="bg-white p-8 text-center relative border-b border-gray-100">
             <div class="absolute top-0 left-0 w-full h-2 bg-firma-yellow"></div>
-            
             <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" 
                  alt="Voigt Logistik Logo" 
                  class="mx-auto mb-4 h-12 object-contain">
-            
             <h1 class="text-firma-green font-black uppercase tracking-widest text-lg">Reinigung-Dashboard</h1>
         </div>
 
@@ -46,7 +39,6 @@
         </div>
 
         <div id="admin-content" class="hidden p-6 space-y-6 fade-in">
-            
             <div class="mt-2 pt-4 border-t border-gray-100">
                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1 text-center">Aktuelle Reinigungskraft</label>
                 <select id="admin-name-select" 
@@ -65,7 +57,6 @@
                         <button onclick="loadMeldungen()" class="text-[10px] bg-gray-100 text-gray-500 px-3 py-1 rounded-full font-bold hover:bg-gray-200 uppercase transition-colors">🔄 Refresh</button>
                     </div>
                 </div>
-                
                 <div id="liste" class="space-y-3">
                     <p class="text-center text-gray-300 py-10 font-bold uppercase text-[10px] tracking-widest">Lade Aufgaben...</p>
                 </div>
@@ -73,125 +64,119 @@
         </div>
     </div>
 
-<script>
-    const SUPABASE_URL = 'https://khptivsvjngoicpknecj.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    <script>
+        const SUPABASE_URL = 'https://khptivsvjngoicpknecj.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // ... (Hier den gesamten restlichen <script> Teil deiner alten admin.html einfügen) ...
-</script>
-</body>
-</html>
-
-    function requestNotificationPermission() {
-        if ("Notification" in window) {
-            Notification.requestPermission().then(permission => {
-                console.log("Benachrichtigungs-Status:", permission);
-            });
+        function requestNotificationPermission() {
+            if ("Notification" in window) {
+                Notification.requestPermission().then(permission => {
+                    console.log("Benachrichtigungs-Status:", permission);
+                });
+            }
         }
-    }
 
-    function sendPushNotification(typ) {
-        if (Notification.permission === "granted") {
-            new Notification("Neue Reinigungsmeldung!", {
-                body: "Bedarf gemeldet: " + typ,
-                icon: "VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png"
-            });
+        function sendPushNotification(typ) {
+            if (Notification.permission === "granted") {
+                new Notification("Neue Reinigungsmeldung!", {
+                    body: "Bedarf gemeldet: " + typ,
+                    icon: "VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png"
+                });
+            }
         }
-    }
 
-    function testNotification() {
-        if (Notification.permission !== "granted") {
-            alert("Bitte erlaube erst Benachrichtigungen im Browser.");
-            requestNotificationPermission();
-        } else {
-            sendPushNotification("TEST-ALARM");
-        }
-    }
-
-    async function checkPin() {
-        const eingabe = document.getElementById('pin').value;
-        try {
-            const { data: isValid, error } = await _supabase.rpc('check_admin_pin', { input_pin: eingabe });
-            if (error) throw error;
-
-            if (isValid) {
-                document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('admin-content').classList.remove('hidden');
+        function testNotification() {
+            if (Notification.permission !== "granted") {
+                alert("Bitte erlaube erst Benachrichtigungen im Browser.");
                 requestNotificationPermission();
-                loadMeldungen();
-                initRealtime();
             } else {
-                alert("Falsche PIN!");
-                document.getElementById('pin').value = '';
+                sendPushNotification("TEST-ALARM");
             }
-        } catch (err) {
-            console.error("Login-Fehler:", err);
-            alert("Verbindungsfehler zur Datenbank.");
         }
-    }
 
-    function initRealtime() {
-        _supabase
-            .channel('schema-db-changes')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'meldungen' }, payload => {
-                sendPushNotification(payload.new.typ);
-                loadMeldungen();
-            })
-            .subscribe();
-    }
-
-    async function loadMeldungen() {
-        try {
-            const { data, error } = await _supabase
-                .from('meldungen')
-                .select('*')
-                .eq('status', 'offen')
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
-            const liste = document.getElementById('liste');
-            liste.innerHTML = '';
-
-            if (data.length === 0) {
-                liste.innerHTML = `
-                    <div class="bg-white p-10 rounded-2xl shadow-sm text-center border-2 border-dashed border-gray-200">
-                        <p class="text-gray-400 font-bold uppercase tracking-widest text-xs">✨ Alles erledigt!</p>
-                    </div>`;
-                return;
+        async function checkPin() {
+            const eingabe = document.getElementById('pin').value;
+            try {
+                const { data: isValid, error } = await _supabase.rpc('check_admin_pin', { input_pin: eingabe });
+                if (error) throw error;
+                if (isValid) {
+                    document.getElementById('login-section').classList.add('hidden');
+                    document.getElementById('admin-content').classList.remove('hidden');
+                    requestNotificationPermission();
+                    loadMeldungen();
+                    initRealtime();
+                } else {
+                    alert("Falsche PIN!");
+                    document.getElementById('pin').value = '';
+                }
+            } catch (err) {
+                console.error("Login-Fehler:", err);
+                alert("Verbindungsfehler zur Datenbank.");
             }
+        }
 
-            data.forEach(m => {
-                const div = document.createElement('div');
-                div.className = "bg-white p-5 rounded-2xl shadow-md border-l-8 border-firma-green flex justify-between items-center transition-all hover:shadow-lg fade-in";
-                let icon = m.typ === 'Seife' ? '🧼' : m.typ === 'Klopapier' ? '🧻' : m.typ === 'Handtücher' ? '🖐️' : '⚠️';
-                div.innerHTML = `
-                    <div class="flex-1 pr-4">
-                        <p class="font-black text-firma-green uppercase text-sm flex items-center gap-2"><span>${icon}</span> ${m.typ}</p>
-                        <p class="text-[10px] text-gray-400 font-bold mb-1 italic">${new Date(m.created_at).toLocaleString('de-DE')}</p>
-                        ${m.nachricht ? `<p class="text-sm text-gray-600 leading-tight bg-gray-50 p-2 rounded-lg border border-gray-100 italic">"${m.nachricht}"</p>` : ''}
-                    </div>
-                    <button onclick="erledigen('${m.id}')" class="bg-firma-yellow text-white px-4 py-3 rounded-xl font-black text-xs shadow-md hover:bg-[#d9a322] active:scale-90 transition-all uppercase whitespace-nowrap">Erledigt</button>`;
-                liste.appendChild(div);
-            });
-        } catch (err) { console.error("Ladefehler:", err); }
-    }
+        function initRealtime() {
+            _supabase
+                .channel('schema-db-changes')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'meldungen' }, payload => {
+                    sendPushNotification(payload.new.typ);
+                    loadMeldungen();
+                })
+                .subscribe();
+        }
 
-    async function erledigen(id) {
-        const name = document.getElementById('admin-name-select').value;
-        try {
-            const { error } = await _supabase
-                .from('meldungen')
-                .update({ status: 'erledigt', erledigt_von: name, erledigt_am: new Date().toISOString() })
-                .eq('id', id);
-            if (error) throw error;
-            loadMeldungen();
-        } catch (err) { alert("Fehler: " + err.message); }
-    }
+        async function loadMeldungen() {
+            try {
+                const { data, error } = await _supabase
+                    .from('meldungen')
+                    .select('*')
+                    .eq('status', 'offen')
+                    .order('created_at', { ascending: false });
 
-    setInterval(() => {
-        if (!document.getElementById('admin-content').classList.contains('hidden')) loadMeldungen();
-    }, 30000);
-</script>
+                if (error) throw error;
+                const liste = document.getElementById('liste');
+                liste.innerHTML = '';
+
+                if (data.length === 0) {
+                    liste.innerHTML = `
+                        <div class="bg-white p-10 rounded-2xl shadow-sm text-center border-2 border-dashed border-gray-200">
+                            <p class="text-gray-400 font-bold uppercase tracking-widest text-xs">✨ Alles erledigt!</p>
+                        </div>`;
+                    return;
+                }
+
+                data.forEach(m => {
+                    const div = document.createElement('div');
+                    div.className = "bg-white p-5 rounded-2xl shadow-md border-l-8 border-firma-green flex justify-between items-center transition-all hover:shadow-lg fade-in";
+                    let icon = m.typ === 'Seife' ? '🧼' : m.typ === 'Klopapier' ? '🧻' : m.typ === 'Handtücher' ? '🖐️' : '⚠️';
+                    div.innerHTML = `
+                        <div class="flex-1 pr-4">
+                            <p class="font-black text-firma-green uppercase text-sm flex items-center gap-2"><span>${icon}</span> ${m.typ}</p>
+                            <p class="text-[10px] text-gray-400 font-bold mb-1 italic">${new Date(m.created_at).toLocaleString('de-DE')}</p>
+                            ${m.nachricht ? `<p class="text-sm text-gray-600 leading-tight bg-gray-50 p-2 rounded-lg border border-gray-100 italic">"${m.nachricht}"</p>` : ''}
+                        </div>
+                        <button onclick="erledigen('${m.id}')" class="bg-firma-yellow text-white px-4 py-3 rounded-xl font-black text-xs shadow-md hover:bg-[#d9a322] active:scale-90 transition-all uppercase whitespace-nowrap">Erledigt</button>`;
+                    liste.appendChild(div);
+                });
+            } catch (err) { console.error("Ladefehler:", err); }
+        }
+
+        async function erledigen(id) {
+            const name = document.getElementById('admin-name-select').value;
+            try {
+                const { error } = await _supabase
+                    .from('meldungen')
+                    .update({ status: 'erledigt', erledigt_von: name, erledigt_am: new Date().toISOString() })
+                    .eq('id', id);
+                if (error) throw error;
+                loadMeldungen();
+            } catch (err) { alert("Fehler: " + err.message); }
+        }
+
+        setInterval(() => {
+            if (!document.getElementById('admin-content').classList.contains('hidden')) loadMeldungen();
+        }, 30000);
+    </script>
 </body>
 </html>
