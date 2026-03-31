@@ -2,58 +2,56 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Service-Ruf - Voigt Logistik</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Firmenfarben definieren */
         .text-firma-green { color: #006959; }
         .bg-firma-green { background-color: #006959; }
         .bg-firma-yellow { background-color: #F4B827; }
         .border-firma-green { border-color: #006959; }
         
-        /* Sanftes Einblenden der Bestätigung */
+        /* Verhindert den blauen Standard-Rahmen beim Tippen auf Handys */
+        * { -webkit-tap-highlight-color: transparent; }
+
         .fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
-<body class="bg-gray-100 font-sans text-gray-800 flex items-center justify-center min-h-screen p-4">
+<body class="bg-gray-100 font-sans text-gray-800 flex items-center justify-center min-h-screen p-4 antialiased">
 
     <div class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/20">
         
-        <div class="bg-white p-8 text-center relative border-b border-gray-100">
+        <div class="bg-white p-6 text-center relative border-b border-gray-100">
             <div class="absolute top-0 left-0 w-full h-2 bg-firma-yellow"></div>
-            
-            <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" alt="Voigt Logistik Logo" class="mx-auto mb-4 h-12 object-contain">
-            
-            <h1 class="text-firma-green font-black uppercase tracking-widest text-lg">Service-Ruf</h1>
+            <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" alt="Voigt Logistik Logo" class="mx-auto mb-3 h-10 object-contain">
+            <h1 class="text-firma-green font-black uppercase tracking-widest text-base">Service-Ruf</h1>
         </div>
 
-        <div id="main-ui" class="p-6 space-y-4">
+        <div id="main-ui" class="p-5 space-y-4">
             
             <div class="grid grid-cols-1 gap-3">
-                <button onclick="senden('Seife')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:scale-95 transition-all group">
+                <button onclick="senden('Seife')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:bg-white active:scale-[0.97] transition-all group">
                     <span class="text-3xl mr-5">🧼</span>
-                    <span class="font-black uppercase text-firma-green text-lg tracking-tight">Seife leer</span>
+                    <span class="font-black uppercase text-firma-green text-lg tracking-tight text-left">Seife leer</span>
                 </button>
 
-                <button onclick="senden('Klopapier')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:scale-95 transition-all group">
+                <button onclick="senden('Klopapier')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:bg-white active:scale-[0.97] transition-all group">
                     <span class="text-3xl mr-5">🧻</span>
-                    <span class="font-black uppercase text-firma-green text-lg tracking-tight">Klopapier leer</span>
+                    <span class="font-black uppercase text-firma-green text-lg tracking-tight text-left">Klopapier leer</span>
                 </button>
 
-                <button onclick="senden('Handtücher')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:scale-95 transition-all group">
+                <button onclick="senden('Handtücher')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:bg-white active:scale-[0.97] transition-all group">
                     <span class="text-3xl mr-5">🖐️</span>
-                    <span class="font-black uppercase text-firma-green text-lg tracking-tight">Handtücher leer</span>
+                    <span class="font-black uppercase text-firma-green text-lg tracking-tight text-left">Handtücher leer</span>
                 </button>
             </div>
 
-            <div class="mt-6 pt-6 border-t border-gray-100">
-                <label class="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1 text-center">Sonstige Mitteilung an die Immobilienabteilung</label>
-                
-                <textarea id="gast-nachricht" placeholder="z.B. Defekt am Waschbecken..." 
-                    class="w-full p-4 bg-firma-green border-2 border-firma-green rounded-2xl text-sm text-white placeholder-green-100/70 outline-none focus:ring-2 focus:ring-firma-yellow transition-all resize-none shadow-inner" rows="3"></textarea>
+            <div class="mt-4 pt-4 border-t border-gray-100">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1 text-center">Sonstige Mitteilung / Defekt melden</label>
+                <textarea id="gast-nachricht" placeholder="Geben Sie hier ggf. Details ein..." 
+                    class="w-full p-4 bg-firma-green border-2 border-firma-green rounded-2xl text-sm text-white placeholder-green-100/50 outline-none focus:ring-2 focus:ring-firma-yellow transition-all resize-none shadow-inner" rows="2"></textarea>
             </div>
         </div>
 
@@ -64,7 +62,7 @@
             <h2 class="font-black text-xl text-firma-green uppercase mb-2 leading-tight">Vielen Dank!</h2>
             <p class="text-gray-600 font-bold leading-tight">Die Immobilienabteilung wurde informiert.</p>
             
-            <div class="mt-8">
+            <div class="mt-8 px-4">
                 <div class="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                     <div id="progress-bar" class="h-full bg-firma-yellow w-0 transition-all duration-[3000ms] ease-linear"></div>
                 </div>
@@ -86,23 +84,21 @@
             setTimeout(() => { document.getElementById('progress-bar').style.width = '100%'; }, 50);
 
             try {
-                // Senden an Supabase
                 const { error } = await _supabase
                     .from('meldungen')
                     .insert([{ typ: typ, nachricht: nachricht, status: 'offen' }]);
 
                 if (error) throw error;
 
-                // Reset nach 3 Sekunden
                 setTimeout(() => {
                     document.getElementById('main-ui').classList.remove('hidden');
                     document.getElementById('success-ui').classList.add('hidden');
                     document.getElementById('progress-bar').style.width = '0%';
-                    document.getElementById('gast-nachricht').value = ''; // Feld leeren
+                    document.getElementById('gast-nachricht').value = '';
                 }, 3000);
 
             } catch (err) {
-                alert("Fehler!");
+                alert("Verbindungsfehler!");
                 location.reload();
             }
         }
