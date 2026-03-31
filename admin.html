@@ -126,41 +126,48 @@
                 .subscribe();
         }
 
-        async function loadMeldungen() {
-            try {
-                const { data, error } = await _supabase
-                    .from('meldungen')
-                    .select('*')
-                    .eq('status', 'offen')
-                    .order('created_at', { ascending: false });
+  async function loadMeldungen() {
+    try {
+        const { data, error } = await _supabase
+            .from('meldungen')
+            .select('*')
+            .eq('status', 'offen')
+            .order('created_at', { ascending: false });
 
-                if (error) throw error;
-                const liste = document.getElementById('liste');
-                liste.innerHTML = '';
+        if (error) throw error;
+        const liste = document.getElementById('liste');
+        liste.innerHTML = '';
 
-                if (data.length === 0) {
-                    liste.innerHTML = `
-                        <div class="bg-white p-10 rounded-2xl shadow-sm text-center border-2 border-dashed border-gray-200">
-                            <p class="text-gray-400 font-bold uppercase tracking-widest text-xs">✨ Alles erledigt!</p>
-                        </div>`;
-                    return;
-                }
-
-                data.forEach(m => {
-                    const div = document.createElement('div');
-                    div.className = "bg-white p-5 rounded-2xl shadow-md border-l-8 border-firma-green flex justify-between items-center transition-all hover:shadow-lg fade-in";
-                    let icon = m.typ === 'Seife' ? '🧼' : m.typ === 'Klopapier' ? '🧻' : m.typ === 'Handtücher' ? '🖐️' : '⚠️';
-                    div.innerHTML = `
-                        <div class="flex-1 pr-4">
-                            <p class="font-black text-firma-green uppercase text-sm flex items-center gap-2"><span>${icon}</span> ${m.typ}</p>
-                            <p class="text-[10px] text-gray-400 font-bold mb-1 italic">${new Date(m.created_at).toLocaleString('de-DE')}</p>
-                            ${m.nachricht ? `<p class="text-sm text-gray-600 leading-tight bg-gray-50 p-2 rounded-lg border border-gray-100 italic">"${m.nachricht}"</p>` : ''}
-                        </div>
-                        <button onclick="erledigen('${m.id}')" class="bg-firma-yellow text-white px-4 py-3 rounded-xl font-black text-xs shadow-md hover:bg-[#d9a322] active:scale-90 transition-all uppercase whitespace-nowrap">Erledigt</button>`;
-                    liste.appendChild(div);
-                });
-            } catch (err) { console.error("Ladefehler:", err); }
+        if (data.length === 0) {
+            liste.innerHTML = `<p class="text-center text-gray-300 py-10 font-bold uppercase text-[10px] tracking-widest">✨ Alles erledigt!</p>`;
+            return;
         }
+
+        data.forEach(m => {
+            const div = document.createElement('div');
+            div.className = "bg-white p-5 rounded-2xl shadow-md border-l-8 border-firma-green flex justify-between items-center transition-all hover:shadow-lg fade-in";
+            
+            // Foto-Logik: Prüfen ob ein Link in der Nachricht steht oder die neue Spalte existiert
+            let fotoHtml = '';
+            if (m.nachricht && m.nachricht.includes('[FOTO: ')) {
+                const url = m.nachricht.split('[FOTO: ')[1].split(']')[0];
+                fotoHtml = `<a href="${url}" target="_blank" class="mt-2 block"><img src="${url}" class="h-20 w-full object-cover rounded-lg border border-gray-200"></a>`;
+            }
+
+            let icon = m.typ === 'Seife' ? '🧼' : m.typ === 'Klopapier' ? '🧻' : m.typ === 'Handtücher' ? '🖐️' : '⚠️';
+            
+            div.innerHTML = `
+                <div class="flex-1 pr-4">
+                    <p class="font-black text-firma-green uppercase text-sm flex items-center gap-2"><span>${icon}</span> ${m.typ}</p>
+                    <p class="text-[10px] text-gray-400 font-bold mb-1 italic">${new Date(m.created_at).toLocaleString('de-DE')}</p>
+                    ${m.nachricht ? `<p class="text-sm text-gray-600 leading-tight italic">"${m.nachricht.replace(/\[FOTO: .*?\]/, '')}"</p>` : ''}
+                    ${fotoHtml}
+                </div>
+                <button onclick="erledigen('${m.id}')" class="bg-firma-yellow text-white px-4 py-3 rounded-xl font-black text-xs shadow-md hover:bg-[#d9a322] active:scale-90 transition-all uppercase whitespace-nowrap">Erledigt</button>`;
+            liste.appendChild(div);
+        });
+    } catch (err) { console.error("Ladefehler:", err); }
+}
 
         async function erledigen(id) {
             const name = document.getElementById('admin-name-select').value;
