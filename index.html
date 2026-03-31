@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sanitär-Melder</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans p-4">
+
+    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 mt-10">
+        <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">Sanitär-Meldung</h1>
+        
+        <div class="grid grid-cols-1 gap-4 mb-8">
+            <button onclick="melde('seife')" id="btn-seife" class="p-6 bg-blue-500 text-white rounded-lg text-xl font-bold active:scale-95 transition-all shadow-lg">🧼 Seife leer</button>
+            <button onclick="melde('klopapier')" id="btn-klopapier" class="p-6 bg-blue-500 text-white rounded-lg text-xl font-bold active:scale-95 transition-all shadow-lg">🧻 Klopapier leer</button>
+            <button onclick="melde('handtuch')" id="btn-handtuch" class="p-6 bg-blue-500 text-white rounded-lg text-xl font-bold active:scale-95 transition-all shadow-lg">🖐️ Handtücher leer</button>
+        </div>
+
+        <hr class="my-6 border-gray-200">
+
+        <div class="space-y-4">
+            <h2 class="text-lg font-semibold text-gray-700">Sonstiges / Defekt melden</h2>
+            <textarea id="freitext" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" rows="3" placeholder="Was genau ist defekt?"></textarea>
+            <button onclick="melde('defekt')" class="w-full bg-red-500 hover:bg-red-600 text-white py-4 rounded-lg font-bold text-lg transition-colors">⚠️ Meldung absenden</button>
+        </div>
+    </div>
+
+    <div id="danke" class="fixed inset-0 bg-green-600 text-white flex flex-col items-center justify-center hidden z-50">
+        <div class="text-6xl mb-4">✅</div>
+        <h1 class="text-4xl font-bold mb-2">Vielen Dank!</h1>
+        <p class="text-xl">Deine Meldung wurde aufgenommen.</p>
+    </div>
+
+    <script>
+        // Deine Supabase Daten
+        const SUPABASE_URL = 'https://khptivsvjngoicpknecj.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_TZrFYFsdkGE0Q61QY69P2Q_Pxr3LQ1-'; // Dein Anon-Key
+        
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Funktion zum Absenden einer Meldung
+        async function melde(art) {
+            const nachricht = document.getElementById('freitext').value;
+            
+            const { error } = await _supabase
+                .from('meldungen')
+                .insert([{ typ: art, nachricht: nachricht, status: 'offen' }]);
+
+            if (!error) {
+                zeigeDanke();
+                document.getElementById('freitext').value = '';
+            } else {
+                alert("Fehler: " + error.message);
+            }
+        }
+
+        // Zeigt die Bestätigung für 5 Sekunden
+        function zeigeDanke() {
+            document.getElementById('danke').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('danke').classList.add('hidden');
+                checkStatus(); // Status sofort aktualisieren
+            }, 5000);
+        }
+
+        // Prüft, welche Buttons gesperrt werden müssen
+        async function checkStatus() {
+            const { data, error } = await _supabase
+                .from('meldungen')
+                .select('typ')
+                .eq('status', 'offen');
+
+            if (error) return;
+
+            // Alle Buttons erst mal aktivieren
+            const types = ['seife', 'klopapier', 'handtuch'];
+            types.forEach(t => {
+                const btn = document.getElementById('btn-' + t);
+                btn.disabled = false;
+                btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                btn.classList.add('bg-blue-500');
+                // Originaltext wiederherstellen
+                if(t === 'seife') btn.innerText = '🧼 Seife leer';
+                if(t === 'klopapier') btn.innerText = '🧻 Klopapier leer';
+                if(t === 'handtuch') btn.innerText = '🖐️ Handtücher leer';
+            });
+
+            // Aktive Meldungen ausgrauen
+            data.forEach(m => {
+                const btn = document.getElementById('btn-' + m.typ);
+                if(btn) {
+                    btn.disabled = true;
+                    btn.classList.remove('bg-blue-500');
+                    btn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                    btn.innerText = "Bereits gemeldet";
+                }
+            });
+        }
+
+        // Beim Start den Status prüfen
+        checkStatus();
+        // Alle 30 Sekunden automatisch prüfen (Echtzeit-Gefühl)
+        setInterval(checkStatus, 30000);
+    </script>
+</body>
+</html>
