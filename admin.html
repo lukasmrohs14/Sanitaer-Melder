@@ -12,57 +12,104 @@
         <h1 class="text-2xl font-bold mb-6 text-center">Reinigung-Dashboard</h1>
         
         <div id="login-section" class="bg-slate-800 p-6 rounded-lg shadow-xl">
-            <input type="password" id="pin" placeholder="PIN eingeben" class="w-full p-3 bg-slate-700 rounded-lg mb-4 text-center text-xl outline-none">
-            <button onclick="checkPin()" class="w-full bg-blue-600 py-3 rounded-lg font-bold">Einloggen</button>
+            <p class="mb-4 text-center text-slate-400">Bitte PIN eingeben:</p>
+            <input type="password" id="pin" placeholder="PIN" class="w-full p-3 bg-slate-700 rounded-lg mb-4 text-center text-2xl outline-none border-2 border-transparent focus:border-blue-500">
+            <button onclick="checkPin()" class="w-full bg-blue-600 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors">Einloggen</button>
         </div>
 
         <div id="admin-content" class="hidden space-y-4">
-            <div id="liste" class="space-y-3"></div>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Offene Aufgaben</h2>
+                <button onclick="loadMeldungen()" class="text-xs bg-slate-700 px-3 py-1 rounded hover:bg-slate-600">🔄 Aktualisieren</button>
+            </div>
+            <div id="liste" class="space-y-3">
+                </div>
         </div>
     </div>
 
     <script>
+        // 1. Verbindung zu Supabase herstellen
         const SUPABASE_URL = 'https://khptivsvjngoicpknecj.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // 2. PIN Prüfung
         function checkPin() {
-            if (document.getElementById('pin').value === "1234") {
+            const eingabe = document.getElementById('pin').value;
+            if (eingabe === "1234") { // Hier kannst du deine PIN ändern
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('admin-content').classList.remove('hidden');
                 loadMeldungen();
             } else {
                 alert("Falsche PIN!");
+                document.getElementById('pin').value = '';
             }
         }
 
+        // 3. Meldungen aus der Datenbank laden
         async function loadMeldungen() {
-            const { data } = await _supabase.from('meldungen').select('*').eq('status', 'offen').order('created_at', { ascending: false });
-            const liste = document.getElementById('liste');
-            liste.innerHTML = data.length === 0 ? '<p class="text-center text-slate-500 py-10">Alles sauber!</p>' : '';
-            data.forEach(m => {
-                const div = document.createElement('div');
-                div.className = "bg-slate-800 p-4 rounded-lg flex justify-between items-center";
-                div.innerHTML = `<div><p class="font-bold uppercase">${m.typ}</p><p class="text-xs text-slate-400">${m.nachricht || ''}</p></div>
-                                 <button onclick="erledigen('${m.id}')" class="bg-green-600 px-3 py-1 rounded text-sm font-bold">Erledigt</button>`;
-                liste.appendChild(div);
-            });
+            try {
+                const { data, error } = await _supabase
+                    .from('meldungen')
+                    .select('*')
+                    .eq('status', 'offen') // Nur die anzeigen, die noch nicht erledigt sind
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const liste = document.getElementById('liste');
+                liste.innerHTML = '';
+
+                if (data.length === 0) {
+                    liste.innerHTML = '<p class="text-center text-slate-500 py-10">Alles erledigt! Keine offenen Meldungen.</p>';
+                    return;
+                }
+
+                data.forEach(m => {
+                    const div = document.createElement('div');
+                    div.className = "bg-slate-800 p-4 rounded-lg flex justify-between items-center border-l-4 border-blue-500 shadow-md";
+                    
+                    // Icon je nach Typ
+                    let icon = m.typ === 'seife' ? '🧼' : m.typ === 'klopapier' ? '🧻' : m.typ === 'handtuch' ? '🖐️' : '⚠️';
+                    
+                    div.innerHTML = `
+                        <div class="flex-1">
+                            <p class="font-bold uppercase text-sm">${icon} ${m.typ}</p>
+                            <p class="text-xs text-slate-400">${new Date(m.created_at).toLocaleString('de-DE')}</p>
+                            ${m.nachricht ? `<p class="text-sm italic text-slate-300 mt-1">"${m.nachricht}"</p>` : ''}
+                        </div>
+                        <button onclick="erledigen('${m.id}')" class="ml-4 bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-bold text-sm transition-colors shadow">Erledigt</button>
+                    `;
+                    liste.appendChild(div);
+                });
+            } catch (err) {
+                console.error("Fehler beim Laden:", err);
+            }
         }
 
-      async function erledigen(id) {
-            await _supabase.from('meldungen').update({ status: 'erledigt' }).eq('id', id);
-            loadMeldungen();
+        // 4. Meldung als erledigt markieren
+        async function erledigen(id) {
+            try {
+                const { error } = await _supabase
+                    .from('meldungen')
+                    .update({ status: 'erledigt' })
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                // Liste sofort neu laden, damit die erledigte Meldung verschwindet
+                loadMeldungen();
+            } catch (err) {
+                alert("Fehler beim Aktualisieren: " + err.message);
+            }
         }
 
-        // NEU: Automatisches Update der Liste
-        // Alle 10 Sekunden wird geprüft, ob neue Meldungen eingegangen sind
+        // 5. Automatischer Refresh alle 10 Sekunden (optional)
         setInterval(() => {
-            // Nur laden, wenn der Admin bereits eingeloggt ist
-            const contentVisible = !document.getElementById('admin-content').classList.contains('hidden');
-            if (contentVisible) {
+            if (!document.getElementById('admin-content').classList.contains('hidden')) {
                 loadMeldungen();
             }
-        }, 10000); 
+        }, 10000);
     </script>
 </body>
 </html>
