@@ -49,10 +49,20 @@
             });
         }
 
-        async function erledigen(id) {
+      async function erledigen(id) {
             await _supabase.from('meldungen').update({ status: 'erledigt' }).eq('id', id);
             loadMeldungen();
         }
+
+        // NEU: Automatisches Update der Liste
+        // Alle 10 Sekunden wird geprüft, ob neue Meldungen eingegangen sind
+        setInterval(() => {
+            // Nur laden, wenn der Admin bereits eingeloggt ist
+            const contentVisible = !document.getElementById('admin-content').classList.contains('hidden');
+            if (contentVisible) {
+                loadMeldungen();
+            }
+        }, 10000); 
     </script>
 </body>
 </html>
