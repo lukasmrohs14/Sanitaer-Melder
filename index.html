@@ -33,18 +33,14 @@
         <p class="text-xl">Deine Meldung wurde aufgenommen.</p>
     </div>
 
-  <script>
-    // Deine Supabase Daten
+<script>
     const SUPABASE_URL = 'https://khptivsvjngoicpknecj.supabase.co';
-    // WICHTIG: Kopiere den Key exakt so, wie er in deinem Supabase Dashboard steht!
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE'; 
     
-    // Initialisierung
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     async function melde(art) {
         const nachricht = document.getElementById('freitext').value;
-        
         try {
             const { error } = await _supabase
                 .from('meldungen')
@@ -77,29 +73,32 @@
             if (error) throw error;
 
             const types = ['seife', 'klopapier', 'handtuch'];
+            const labels = { 'seife': '🧼 Seife leer', 'klopapier': '🧻 Klopapier leer', 'handtuch': '🖐️ Handtücher leer' };
+
             types.forEach(t => {
                 const btn = document.getElementById('btn-' + t);
                 if (!btn) return;
                 
-                // Reset
-                btn.disabled = false;
-                btn.classList.remove('bg-gray-400');
-                btn.classList.add('bg-blue-500');
-
-                // Sperren falls offen
                 if (data.some(m => m.typ === t)) {
                     btn.disabled = true;
-                    btn.classList.remove('bg-blue-500');
-                    btn.classList.add('bg-gray-400');
+                    btn.classList.replace('bg-blue-500', 'bg-gray-400');
                     btn.innerText = "Bereits gemeldet";
+                } else {
+                    btn.disabled = false;
+                    btn.classList.replace('bg-gray-400', 'bg-blue-500');
+                    btn.innerText = labels[t];
                 }
             });
         } catch (err) {
-            console.log("Status-Check fehlgeschlagen (evtl. noch keine Daten)");
+            console.log("Status-Check Fehler:", err);
         }
     }
 
+    // Erstmaliger Check beim Laden
     checkStatus();
+
+    // Alle 5 Sekunden automatisch prüfen
+    setInterval(checkStatus, 5000);
 </script>
 </body>
 </html>
