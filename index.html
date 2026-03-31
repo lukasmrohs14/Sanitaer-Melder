@@ -11,12 +11,20 @@
         .bg-firma-green { background-color: #006959; }
         .bg-firma-yellow { background-color: #F4B827; }
         .border-firma-green { border-color: #006959; }
-        
-        /* Verhindert den blauen Standard-Rahmen beim Tippen auf Handys */
         * { -webkit-tap-highlight-color: transparent; }
-
         .fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        
+        /* Loading Spinner */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #006959;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 flex items-center justify-center min-h-screen p-4 antialiased">
@@ -48,23 +56,46 @@
                 </button>
             </div>
 
-            <div class="mt-4 pt-4 border-t border-gray-100">
+            <div class="mt-4 pt-4 border-t border-gray-100 space-y-3">
                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1 text-center">Sonstige Mitteilung / Defekt melden</label>
+                
+                <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-2xl border-2 border-gray-100">
+                    <input type="file" id="foto-input" accept="image/*" capture="environment" class="hidden" onchange="vorschauBild(this)">
+                    
+                    <button onclick="document.getElementById('foto-input').click()" class="bg-gray-200 text-gray-700 p-4 rounded-xl active:scale-95 transition-all text-xl">
+                        📸
+                    </button>
+                    
+                    <div id="foto-vorschau-container" class="hidden flex items-center gap-2 flex-grow">
+                        <img id="foto-vorschau" src="" class="h-14 w-14 object-cover rounded-lg border-2 border-firma-green shadow-md">
+                        <button onclick="entferneFoto()" class="text-xs text-red-500 font-bold uppercase p-2 bg-red-50 rounded-lg">Löschen</button>
+                    </div>
+                    <p id="foto-text" class="text-sm text-gray-400 flex-grow font-medium">Foto hinzufügen (optional)</p>
+                </div>
+
                 <textarea id="gast-nachricht" placeholder="Geben Sie hier ggf. Details ein..." 
                     class="w-full p-4 bg-firma-green border-2 border-firma-green rounded-2xl text-sm text-white placeholder-green-100/50 outline-none focus:ring-2 focus:ring-firma-yellow transition-all resize-none shadow-inner" rows="2"></textarea>
             </div>
         </div>
 
-        <div id="success-ui" class="hidden p-10 text-center fade-in">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+        <div id="success-ui" class="hidden p-10 text-center fade-in space-y-4">
+            <div id="status-icon" class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
                 <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
             </div>
-            <h2 class="font-black text-xl text-firma-green uppercase mb-2 leading-tight">Vielen Dank!</h2>
-            <p class="text-gray-600 font-bold leading-tight">Die Immobilienabteilung wurde informiert.</p>
             
-            <div class="mt-8 px-4">
-                <div class="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                    <div id="progress-bar" class="h-full bg-firma-yellow w-0 transition-all duration-[3000ms] ease-linear"></div>
+            <div id="uploading-ui" class="hidden flex flex-col items-center gap-3">
+                <div class="loader"></div>
+                <p class="text-firma-green font-bold text-sm">Bild wird hochgeladen...</p>
+            </div>
+
+            <div id="done-ui">
+                <h2 class="font-black text-xl text-firma-green uppercase mb-2 leading-tight">Vielen Dank!</h2>
+                <p class="text-gray-600 font-bold leading-tight">Die Immobilienabteilung wurde informiert.</p>
+                
+                <div class="mt-8 px-4">
+                    <div class="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="h-full bg-firma-yellow w-0 transition-all duration-[3000ms] ease-linear"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -75,33 +106,104 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        let selectedFile = null;
+
+        // Funktion zur Bild-Vorschau
+        function vorschauBild(input) {
+            if (input.files && input.files[0]) {
+                selectedFile = input.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('foto-vorschau').src = e.target.result;
+                    document.getElementById('foto-vorschau-container').classList.remove('hidden');
+                    document.getElementById('foto-text').classList.add('hidden');
+                }
+                reader.readAsDataURL(selectedFile);
+            }
+        }
+
+        // Funktion zum Löschen des ausgewählten Fotos
+        function entferneFoto() {
+            selectedFile = null;
+            document.getElementById('foto-input').value = ''; // Input resetten
+            document.getElementById('foto-vorschau-container').classList.add('hidden');
+            document.getElementById('foto-text').classList.remove('hidden');
+        }
+
         async function senden(typ) {
             const nachricht = document.getElementById('gast-nachricht').value;
+            let fotoUrl = null;
 
+            // UI Wechsel & Lade-Zustand zeigen
             document.getElementById('main-ui').classList.add('hidden');
             document.getElementById('success-ui').classList.remove('hidden');
             
-            setTimeout(() => { document.getElementById('progress-bar').style.width = '100%'; }, 50);
+            // Falls ein Foto da ist, Lade-UI zeigen
+            if (selectedFile) {
+                document.getElementById('status-icon').classList.add('hidden');
+                document.getElementById('done-ui').classList.add('hidden');
+                document.getElementById('uploading-ui').classList.remove('hidden');
+            }
 
             try {
-                const { error } = await _supabase
+                // 1. Ggf. Foto hochladen (WICHTIG: Bucket 'reparatur-fotos' muss public sein!)
+                if (selectedFile) {
+                    // Eindeutigen Dateinamen erstellen (Zeitstempel + Name)
+                    const fileName = `${Date.now()}_${selectedFile.name}`;
+                    
+                    const { data, error: uploadError } = await _supabase.storage
+                        .from('reparatur-fotos')
+                        .upload(fileName, selectedFile);
+
+                    if (uploadError) throw uploadError;
+
+                    // Öffentliche URL abrufen
+                    const { data: publicUrlData } = _supabase.storage
+                        .from('reparatur-fotos')
+                        .getPublicUrl(fileName);
+                    
+                    fotoUrl = publicUrlData.publicUrl;
+                }
+
+                // Lade-UI verstecken, Erfolgs-UI zeigen
+                if (selectedFile) {
+                    document.getElementById('status-icon').classList.remove('hidden');
+                    document.getElementById('done-ui').classList.remove('hidden');
+                    document.getElementById('uploading-ui').classList.add('hidden');
+                }
+
+                // Fortschrittsbalken starten
+                setTimeout(() => { document.getElementById('progress-bar').style.width = '100%'; }, 50);
+
+                // 2. Senden an Supabase (Wir speichern fotoUrl in der Spalte 'nachricht' mit, falls keine extra Spalte da ist)
+                // Profi-Tipp: Erstelle eine Spalte 'foto_url' in deiner Tabelle 'meldungen'!
+                const insertData = { typ: typ, nachricht: nachricht, status: 'offen' };
+                if (fotoUrl) {
+                    insertData.nachricht = (nachricht ? nachricht + ' - ' : '') + '[FOTO: ' + fotoUrl + ']';
+                }
+
+                const { error: insertError } = await _supabase
                     .from('meldungen')
-                    .insert([{ typ: typ, nachricht: nachricht, status: 'offen' }]);
+                    .insert([insertData]);
 
-                if (error) throw error;
+                if (insertError) throw insertError;
 
+                // Reset nach 3 Sekunden
                 setTimeout(() => {
                     document.getElementById('main-ui').classList.remove('hidden');
                     document.getElementById('success-ui').classList.add('hidden');
                     document.getElementById('progress-bar').style.width = '0%';
-                    document.getElementById('gast-nachricht').value = '';
+                    document.getElementById('gast-nachricht').value = ''; 
+                    entferneFoto(); // Foto-Vorschau leeren
                 }, 3000);
 
             } catch (err) {
-                alert("Verbindungsfehler!");
+                console.error("Fehler:", err);
+                alert("Fehler beim Senden oder Foto-Upload!");
                 location.reload();
             }
         }
     </script>
 </body>
+</html>
 </html>
