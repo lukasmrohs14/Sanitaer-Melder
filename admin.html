@@ -110,20 +110,28 @@
             }
         }
 
-        async function erledigen(id) {
-            try {
-                const { error } = await _supabase
-                    .from('meldungen')
-                    .update({ status: 'erledigt' })
-                    .eq('id', id);
+async function erledigen(id) {
+    // 1. Namen abfragen
+    const name = prompt("Wer erledigt diese Aufgabe? (z.B. Felix oder Birgit)");
+    
+    if (!name) return; // Abbrechen, falls kein Name eingegeben wurde
 
-                if (error) throw error;
-                loadMeldungen();
-            } catch (err) {
-                alert("Fehler: " + err.message);
-            }
-        }
+    try {
+        const { error } = await _supabase
+            .from('meldungen')
+            .update({ 
+                status: 'erledigt',
+                erledigt_von: name,
+                erledigt_am: new Date().toISOString() // Aktueller Zeitstempel
+            })
+            .eq('id', id);
 
+        if (error) throw error;
+        loadMeldungen();
+    } catch (err) {
+        alert("Fehler: " + err.message);
+    }
+}
         // Auto-Refresh alle 10 Sekunden
         setInterval(() => {
             if (!document.getElementById('admin-content').classList.contains('hidden')) {
