@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistik-Zentrale - Voigt Logistik</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .text-firma-green { color: #006959; }
+        .bg-firma-green { background-color: #006959; }
+        .bg-firma-yellow { background-color: #F4B827; }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800 min-h-screen p-4 md:p-8 antialiased">
+
+    <div class="max-w-5xl mx-auto space-y-8">
+        
+        <div class="bg-white p-6 rounded-[2.5rem] shadow-xl flex flex-col md:flex-row justify-between items-center border-b-8 border-firma-yellow fade-in">
+            <div class="text-center md:text-left mb-4 md:mb-0">
+                <h1 class="text-firma-green font-black uppercase tracking-widest text-2xl">Analyse-Dashboard</h1>
+                <p class="text-gray-400 text-xs font-bold uppercase tracking-tighter">Muster erkennen & Prozesse optimieren</p>
+            </div>
+            <a href="admin.html" class="bg-gray-100 text-gray-600 px-6 py-3 rounded-2xl font-black text-xs uppercase shadow-sm hover:bg-gray-200 transition-all">Zurück zum Admin</a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 fade-in" style="animation-delay: 0.1s">
+            <div class="bg-white p-6 rounded-[2rem] shadow-md border-l-4 border-firma-green">
+                <p class="text-[10px] font-black text-gray-400 uppercase">Gesamt Meldungen</p>
+                <p id="stat-total" class="text-3xl font-black text-firma-green">--</p>
+            </div>
+            <div class="bg-white p-6 rounded-[2rem] shadow-md border-l-4 border-firma-yellow">
+                <p class="text-[10px] font-black text-gray-400 uppercase">Häufigstes Problem</p>
+                <p id="stat-top" class="text-xl font-black text-firma-green uppercase">--</p>
+            </div>
+            <div class="bg-white p-6 rounded-[2rem] shadow-md border-l-4 border-blue-500">
+                <p class="text-[10px] font-black text-gray-400 uppercase">Erledigungsquote</p>
+                <p id="stat-ratio" class="text-3xl font-black text-firma-green">--</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 fade-in" style="animation-delay: 0.2s">
+            
+            <div class="bg-white p-8 rounded-[2.5rem] shadow-lg">
+                <h2 class="text-firma-green font-black uppercase text-sm mb-6 flex items-center gap-2">
+                    📅 Auslastung nach Wochentag
+                </h2>
+                <canvas id="weekdayChart" height="250"></canvas>
+            </div>
+
+            <div class="bg-white p-8 rounded-[2.5rem] shadow-lg">
+                <h2 class="text-firma-green font-black uppercase text-sm mb-6 flex items-center gap-2">
+                    ⏰ Meldungen nach Uhrzeit
+                </h2>
+                <canvas id="hourChart" height="250"></canvas>
+            </div>
+
+            <div class="bg-white p-8 rounded-[2.5rem] shadow-lg">
+                <h2 class="text-firma-green font-black uppercase text-sm mb-6">📦 Material-Bedarf</h2>
+                <div class="max-w-[250px] mx-auto">
+                    <canvas id="typeChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-[2.5rem] shadow-lg">
+                <h2 class="text-firma-green font-black uppercase text-sm mb-6">🏆 Erledigt von</h2>
+                <canvas id="adminChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://khptivsvjngoicpknecj.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function initStats() {
+            const { data, error } = await _supabase.from('meldungen').select('*');
+            if (error) { console.error(error); return; }
+
+            // Daten-Vorbereitung
+            const dayCounts = new Array(7).fill(0); // 0=So, 1=Mo...
+            const hourCounts = new Array(24).fill(0);
+            const types = {};
+            const admins = {};
+            let erledigt = 0;
+
+            data.forEach(m => {
+                const date = new Date(m.created_at);
+                dayCounts[date.getDay()]++;
+                hourCounts[date.getHours()]++;
+                
+                types[m.typ] = (types[m.typ] || 0) + 1;
+                
+                if (m.status === 'erledigt') {
+                    erledigt++;
+                    if (m.erledigt_von) {
+                        admins[m.erledigt_von] = (admins[m.erledigt_von] || 0) + 1;
+                    }
+                }
+            });
+
+            // Quick Stats füllen
+            document.getElementById('stat-total').innerText = data.length;
+            document.getElementById('stat-ratio').innerText = Math.round((erledigt / data.length) * 100) + "%";
+            const topProb = Object.entries(types).sort((a,b) => b[1] - a[1])[0];
+            document.getElementById('stat-top').innerText = topProb ? topProb[0] : "--";
+
+            // Chart 1: Wochentage
+            new Chart(document.getElementById('weekdayChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'],
+                    datasets: [{
+                        label: 'Meldungen',
+                        data: dayCounts,
+                        backgroundColor: '#006959',
+                        borderRadius: 10
+                    }]
+                },
+                options: { plugins: { legend: { display: false } } }
+            });
+
+            // Chart 2: Uhrzeiten
+            new Chart(document.getElementById('hourChart'), {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => i + ':00'),
+                    datasets: [{
+                        label: 'Meldungen',
+                        data: hourCounts,
+                        borderColor: '#F4B827',
+                        backgroundColor: 'rgba(244, 184, 39, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { plugins: { legend: { display: false } } }
+            });
+
+            // Chart 3: Typen
+            new Chart(document.getElementById('typeChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(types),
+                    datasets: [{
+                        data: Object.values(types),
+                        backgroundColor: ['#006959', '#F4B827', '#10b981', '#3b82f6', '#ef4444']
+                    }]
+                }
+            });
+
+            // Chart 4: Admins
+            new Chart(document.getElementById('adminChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(admins),
+                    datasets: [{
+                        label: 'Erledigte Aufgaben',
+                        data: Object.values(admins),
+                        backgroundColor: '#F4B827',
+                        borderRadius: 10
+                    }]
+                },
+                options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+            });
+        }
+
+        initStats();
+    </script>
+</body>
+</html>
