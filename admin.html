@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Admin-Login - Voigt Logistik</title>
+    <title>Admin-Dashboard - Voigt Logistik</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -53,7 +53,9 @@
                 <div class="flex justify-between items-center px-1">
                     <h2 class="text-firma-green font-black uppercase tracking-tight text-sm">Offene Aufgaben</h2>
                     <div class="flex gap-1.5">
-                        <button onclick="testNotification()" class="text-[8px] bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-bold uppercase hover:bg-blue-100 transition-colors">🔔 Test Push</button>
+                        <a href="stats.html" class="text-[10px] bg-firma-green text-white px-3 py-1 rounded-full font-bold hover:bg-opacity-90 uppercase transition-colors flex items-center">
+                            📊 Stats
+                        </a>
                         <button onclick="loadMeldungen()" class="text-[10px] bg-gray-100 text-gray-500 px-3 py-1 rounded-full font-bold hover:bg-gray-200 uppercase transition-colors">🔄 Refresh</button>
                     </div>
                 </div>
@@ -69,32 +71,7 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        function requestNotificationPermission() {
-            if ("Notification" in window) {
-                Notification.requestPermission().then(permission => {
-                    console.log("Benachrichtigungs-Status:", permission);
-                });
-            }
-        }
-
-        function sendPushNotification(typ) {
-            if (Notification.permission === "granted") {
-                new Notification("Neue Reinigungsmeldung!", {
-                    body: "Bedarf gemeldet: " + typ,
-                    icon: "VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png"
-                });
-            }
-        }
-
-        function testNotification() {
-            if (Notification.permission !== "granted") {
-                alert("Bitte erlaube erst Benachrichtigungen im Browser.");
-                requestNotificationPermission();
-            } else {
-                sendPushNotification("TEST-ALARM");
-            }
-        }
-
+        // PIN Prüfung
         async function checkPin() {
             const eingabe = document.getElementById('pin').value;
             try {
@@ -103,7 +80,6 @@
                 if (isValid) {
                     document.getElementById('login-section').classList.add('hidden');
                     document.getElementById('admin-content').classList.remove('hidden');
-                    requestNotificationPermission();
                     loadMeldungen();
                     initRealtime();
                 } else {
@@ -112,75 +88,82 @@
                 }
             } catch (err) {
                 console.error("Login-Fehler:", err);
-                alert("Verbindungsfehler zur Datenbank.");
+                alert("Verbindungsfehler.");
             }
         }
 
+        // Echtzeit-Updates
         function initRealtime() {
             _supabase
                 .channel('schema-db-changes')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'meldungen' }, payload => {
-                    sendPushNotification(payload.new.typ);
                     loadMeldungen();
                 })
                 .subscribe();
         }
 
-  async function loadMeldungen() {
-    try {
-        const { data, error } = await _supabase
-            .from('meldungen')
-            .select('*')
-            .eq('status', 'offen')
-            .order('created_at', { ascending: false });
+        // Aufgaben laden
+        async function loadMeldungen() {
+            try {
+                const { data, error } = await _supabase
+                    .from('meldungen')
+                    .select('*')
+                    .eq('status', 'offen')
+                    .order('created_at', { ascending: false });
 
-        if (error) throw error;
-        const liste = document.getElementById('liste');
-        liste.innerHTML = '';
+                if (error) throw error;
+                const liste = document.getElementById('liste');
+                liste.innerHTML = '';
 
-        if (data.length === 0) {
-            liste.innerHTML = `<p class="text-center text-gray-300 py-10 font-bold uppercase text-[10px] tracking-widest">✨ Alles erledigt!</p>`;
-            return;
+                if (data.length === 0) {
+                    liste.innerHTML = `<p class="text-center text-gray-300 py-10 font-bold uppercase text-[10px] tracking-widest">✨ Alles erledigt!</p>`;
+                    return;
+                }
+
+                data.forEach(m => {
+                    const div = document.createElement('div');
+                    div.className = "bg-white p-5 rounded-2xl shadow-md border-l-8 border-firma-green flex justify-between items-center transition-all hover:shadow-lg fade-in";
+                    
+                    // Foto-Logik
+                    let fotoUrl = m.foto_url;
+                    if (!fotoUrl && m.nachricht && m.nachricht.includes('[FOTO: ')) {
+                        fotoUrl = m.nachricht.split('[FOTO: ')[1].split(']')[0];
+                    }
+
+                    const fotoHtml = fotoUrl ? `<a href="${fotoUrl}" target="_blank" class="mt-2 block"><img src="${fotoUrl}" class="h-20 w-full object-cover rounded-lg border border-gray-200"></a>` : '';
+                    const icon = m.typ === 'Seife' ? '🧼' : m.typ === 'Klopapier' ? '🧻' : m.typ === 'Handtücher' ? '🖐️' : '⚠️';
+                    
+                    div.innerHTML = `
+                        <div class="flex-1 pr-4 text-left">
+                            <p class="font-black text-firma-green uppercase text-sm flex items-center gap-2"><span>${icon}</span> ${m.typ}</p>
+                            <p class="text-[10px] text-gray-400 font-bold mb-1 italic">${new Date(m.created_at).toLocaleString('de-DE')}</p>
+                            ${m.nachricht ? `<p class="text-sm text-gray-600 leading-tight italic">"${m.nachricht.replace(/\[FOTO: .*?\]/, '')}"</p>` : ''}
+                            ${fotoHtml}
+                        </div>
+                        <button onclick="erledigen('${m.id}')" class="bg-firma-yellow text-white px-4 py-3 rounded-xl font-black text-xs shadow-md hover:bg-[#d9a322] active:scale-90 transition-all uppercase whitespace-nowrap">Erledigt</button>`;
+                    liste.appendChild(div);
+                });
+            } catch (err) { console.error("Ladefehler:", err); }
         }
 
-        data.forEach(m => {
-            const div = document.createElement('div');
-            div.className = "bg-white p-5 rounded-2xl shadow-md border-l-8 border-firma-green flex justify-between items-center transition-all hover:shadow-lg fade-in";
-            
-            // Foto-Logik: Prüfen ob ein Link in der Nachricht steht oder die neue Spalte existiert
-            let fotoHtml = '';
-            if (m.nachricht && m.nachricht.includes('[FOTO: ')) {
-                const url = m.nachricht.split('[FOTO: ')[1].split(']')[0];
-                fotoHtml = `<a href="${url}" target="_blank" class="mt-2 block"><img src="${url}" class="h-20 w-full object-cover rounded-lg border border-gray-200"></a>`;
-            }
-
-            let icon = m.typ === 'Seife' ? '🧼' : m.typ === 'Klopapier' ? '🧻' : m.typ === 'Handtücher' ? '🖐️' : '⚠️';
-            
-            div.innerHTML = `
-                <div class="flex-1 pr-4">
-                    <p class="font-black text-firma-green uppercase text-sm flex items-center gap-2"><span>${icon}</span> ${m.typ}</p>
-                    <p class="text-[10px] text-gray-400 font-bold mb-1 italic">${new Date(m.created_at).toLocaleString('de-DE')}</p>
-                    ${m.nachricht ? `<p class="text-sm text-gray-600 leading-tight italic">"${m.nachricht.replace(/\[FOTO: .*?\]/, '')}"</p>` : ''}
-                    ${fotoHtml}
-                </div>
-                <button onclick="erledigen('${m.id}')" class="bg-firma-yellow text-white px-4 py-3 rounded-xl font-black text-xs shadow-md hover:bg-[#d9a322] active:scale-90 transition-all uppercase whitespace-nowrap">Erledigt</button>`;
-            liste.appendChild(div);
-        });
-    } catch (err) { console.error("Ladefehler:", err); }
-}
-
+        // Aufgabe als erledigt markieren
         async function erledigen(id) {
             const name = document.getElementById('admin-name-select').value;
             try {
                 const { error } = await _supabase
                     .from('meldungen')
-                    .update({ status: 'erledigt', erledigt_von: name, erledigt_am: new Date().toISOString() })
+                    .update({ 
+                        status: 'erledigt', 
+                        erledigt_von: name, 
+                        erledigt_am: new Date().toISOString() 
+                    })
                     .eq('id', id);
                 if (error) throw error;
                 loadMeldungen();
             } catch (err) { alert("Fehler: " + err.message); }
         }
 
+        // Automatischer Refresh alle 30 Sek
         setInterval(() => {
             if (!document.getElementById('admin-content').classList.contains('hidden')) loadMeldungen();
         }, 30000);
