@@ -71,6 +71,14 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Ermöglicht das Absenden mit der Enter-Taste
+document.getElementById('pin').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+        checkPin();
+    }
+});
+
+        
         // PIN Prüfung
         async function checkPin() {
             const eingabe = document.getElementById('pin').value;
