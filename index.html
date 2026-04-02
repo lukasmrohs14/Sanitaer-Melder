@@ -41,7 +41,6 @@
         </div>
 
         <div id="main-ui" class="p-5 space-y-4 flex-grow flex flex-col justify-between">
-            
             <div class="space-y-3">
                 <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center font-bold">Schnell-Meldung</p>
                 
@@ -88,7 +87,7 @@
                 <textarea id="gast-nachricht" placeholder="Sonstige Mitteilung / Defekt..." 
                     class="w-full p-4 bg-firma-green border-2 border-firma-green rounded-2xl text-sm text-white placeholder-green-100/50 outline-none focus:ring-2 focus:ring-firma-yellow transition-all resize-none shadow-inner h-24"></textarea>
 
-                <button onclick="senden('Sonstiges')" class="w-full bg-firma-green text-white p-4 rounded-2xl font-black uppercase shadow-lg active:scale-[0.97] transition-all tracking-wider text-sm flex items-center justify-center gap-2 group">
+                <button id="send-btn-main" onclick="senden('Sonstiges')" class="w-full bg-firma-green text-white p-4 rounded-2xl font-black uppercase shadow-lg active:scale-[0.97] transition-all tracking-wider text-sm flex items-center justify-center gap-2 group">
                     Senden ➡
                 </button>
             </div>
@@ -98,7 +97,7 @@
             <div id="status-icon" class="mx-auto flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4 text-green-600 text-3xl">✓</div>
             <div id="uploading-ui" class="hidden flex flex-col items-center gap-3">
                 <div class="loader"></div>
-                <p class="text-firma-green font-bold text-sm uppercase">Bild wird hochgeladen...</p>
+                <p class="text-firma-green font-bold text-sm uppercase">Wird verarbeitet...</p>
             </div>
             <div id="done-ui">
                 <h2 class="font-black text-xl text-firma-green uppercase mb-2">Vielen Dank!</h2>
@@ -160,7 +159,7 @@
                 btn.querySelector('.status-text').innerText = "Verfügbar";
             });
 
-            const { data } = await _supabase.from('meldungen').select('typ').eq('standort', currentS).eq('etage', currentE).eq('status', 'offen');
+            const { data, error } = await _supabase.from('meldungen').select('typ').eq('standort', currentS).eq('etage', currentE).eq('status', 'offen');
             if (data) {
                 data.forEach(m => {
                     const btn = document.getElementById('btn-' + m.typ);
@@ -193,38 +192,48 @@
         }
 
         async function senden(typ) {
+            if(!currentS || !currentE) { alert("Bitte erst Standort wählen!"); showPopup(); return; }
+            
             const nachricht = document.getElementById('gast-nachricht').value;
             let fotoUrl = null;
 
+            // Lade-UI vorbereiten
             document.getElementById('main-ui').classList.add('hidden');
             document.getElementById('success-ui').classList.remove('hidden');
-            document.getElementById('success-location').innerText = `${currentS}, ${currentE}`;
+            document.getElementById('status-icon').classList.add('hidden');
+            document.getElementById('done-ui').classList.add('hidden');
+            document.getElementById('uploading-ui').classList.remove('hidden');
 
             try {
+                // 1. Foto Upload falls vorhanden
                 if (selectedFile) {
-                    document.getElementById('status-icon').classList.add('hidden');
-                    document.getElementById('done-ui').classList.add('hidden');
-                    document.getElementById('uploading-ui').classList.remove('hidden');
-
                     const fileName = `${Date.now()}_${selectedFile.name}`;
-                    const { data, error: uploadError } = await _supabase.storage.from('reparatur-fotos').upload(fileName, selectedFile);
+                    const { data: upData, error: uploadError } = await _supabase.storage.from('reparatur-fotos').upload(fileName, selectedFile);
                     if (uploadError) throw uploadError;
 
                     const { data: publicUrlData } = _supabase.storage.from('reparatur-fotos').getPublicUrl(fileName);
                     fotoUrl = publicUrlData.publicUrl;
-
-                    document.getElementById('status-icon').classList.remove('hidden');
-                    document.getElementById('done-ui').classList.remove('hidden');
-                    document.getElementById('uploading-ui').classList.add('hidden');
                 }
 
-                setTimeout(() => { document.getElementById('progress-bar').style.width = '100%'; }, 50);
-
-                const { error } = await _supabase.from('meldungen').insert([{
-                    typ: typ, standort: currentS, etage: currentE, nachricht: nachricht, foto_url: fotoUrl, status: 'offen'
+                // 2. Eintrag in Datenbank
+                const { error: dbError } = await _supabase.from('meldungen').insert([{
+                    typ: typ, 
+                    standort: currentS, 
+                    etage: currentE, 
+                    nachricht: nachricht, 
+                    foto_url: fotoUrl, 
+                    status: 'offen'
                 }]);
 
-                if (error) throw error;
+                if (dbError) throw dbError;
+
+                // 3. Erfolg anzeigen
+                document.getElementById('uploading-ui').classList.add('hidden');
+                document.getElementById('status-icon').classList.remove('hidden');
+                document.getElementById('done-ui').classList.remove('hidden');
+                document.getElementById('success-location').innerText = `${currentS}, ${currentE}`;
+
+                setTimeout(() => { document.getElementById('progress-bar').style.width = '100%'; }, 50);
 
                 setTimeout(() => {
                     document.getElementById('main-ui').classList.remove('hidden');
@@ -236,12 +245,13 @@
                 }, 3000);
 
             } catch (err) {
-                alert("Fehler!");
-                location.reload();
+                console.error(err);
+                alert("Fehler beim Senden: " + (err.message || "Unbekannter Fehler"));
+                // Zurück zum Hauptmenü bei Fehler
+                document.getElementById('main-ui').classList.remove('hidden');
+                document.getElementById('success-ui').classList.add('hidden');
             }
         }
     </script>
-</body>
-</html>
 </body>
 </html>
