@@ -13,7 +13,6 @@
         .bg-firma-yellow { background-color: #F4B827; }
         .fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* Scrollbar Styling für die Liste */
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #006959; border-radius: 10px; }
@@ -44,7 +43,7 @@
                     <option value="Klopapier">🧻 Klopapier</option>
                     <option value="Seife">🧼 Seife</option>
                     <option value="Handtücher">🖐️ Handtücher</option>
-                    <option value="Sonstiges">⚠️ Sonstiges</option>
+                    <option value="Defekt">🛠️ Defekt</option>
                 </select>
 
                 <a href="admin.html" class="bg-gray-800 text-white px-5 py-2 rounded-xl font-bold text-[10px] uppercase hover:bg-black transition-all shadow-md">Zurück</a>
@@ -71,9 +70,8 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
-            
             <div class="bg-white p-6 rounded-[2.5rem] shadow-lg">
-                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">🕒 Muster nach Uhrzeit (Meldungseingang)</h2>
+                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">🕒 Muster nach Uhrzeit</h2>
                 <div class="h-[250px]"><canvas id="hourChart"></canvas></div>
             </div>
 
@@ -83,14 +81,14 @@
             </div>
 
             <div class="bg-white p-6 rounded-[2.5rem] shadow-lg">
-                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4 text-center">📦 Material-Verteilung (Gesamtanteil)</h2>
+                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4 text-center">📦 Material-Verteilung</h2>
                 <div class="max-w-[200px] mx-auto"><canvas id="typeChart"></canvas></div>
             </div>
 
             <div class="bg-white p-6 rounded-[2.5rem] shadow-lg flex flex-col">
                 <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">📝 Letzte Details zum Filter</h2>
                 <div id="recent-list" class="space-y-3 custom-scroll overflow-y-auto max-h-[220px] pr-2 flex-grow">
-                    <p class="text-gray-400 text-xs italic">Wähle einen Filter oder warte auf Daten...</p>
+                    <p class="text-gray-400 text-xs italic">Lade Daten...</p>
                 </div>
             </div>
         </div>
@@ -103,105 +101,113 @@
 
         let charts = {}; 
 
-       async function initStats() {
-    const daysFilter = document.getElementById('time-filter').value;
-    const typeFilter = document.getElementById('type-filter').value;
-    
-    let { data, error } = await _supabase.from('meldungen').select('*').order('created_at', { ascending: false });
-    if (error) { console.error(error); return; }
+        async function initStats() {
+            const daysFilter = document.getElementById('time-filter').value;
+            const typeFilter = document.getElementById('type-filter').value;
+            
+            let { data, error } = await _supabase.from('meldungen').select('*').order('created_at', { ascending: false });
+            if (error) { console.error(error); return; }
 
-    // 1. Zeit-Filter
-    if (daysFilter !== 'all') {
-        const limit = new Date();
-        limit.setDate(limit.getDate() - parseInt(daysFilter));
-        data = data.filter(m => new Date(m.created_at) >= limit);
-    }
-
-    const dayCounts = new Array(7).fill(0);
-    const hourCounts = new Array(24).fill(0);
-    const types = {
-        "Klopapier": 0,
-        "Seife": 0,
-        "Handtücher": 0,
-        "Defekt": 0
-    };
-    let done = 0;
-    let filteredData = [];
-
-    data.forEach(m => {
-        // Vereinheitlichung der Namen (Mapping)
-        let rawType = m.typ.toLowerCase().trim();
-        let cleanType = "";
-
-        if (rawType.includes("klopapier")) cleanType = "Klopapier";
-        else if (rawType.includes("seife")) cleanType = "Seife";
-        else if (rawType.includes("handtuch") || rawType.includes("handtücher")) cleanType = "Handtücher";
-        else if (rawType.includes("defekt")) cleanType = "Defekt";
-
-        // Nur verarbeiten, wenn es in deine 4 Kategorien passt
-        if (cleanType) {
-            // Falls ein Typ-Filter (z.B. nur Klopapier) aktiv ist
-            if (typeFilter === 'all' || typeFilter === cleanType) {
-                const date = new Date(m.created_at);
-                dayCounts[date.getDay()]++;
-                hourCounts[date.getHours()]++;
-                types[cleanType]++;
-                if (m.status === 'erledigt') done++;
-                filteredData.push({...m, displayType: cleanType});
+            if (daysFilter !== 'all') {
+                const limit = new Date();
+                limit.setDate(limit.getDate() - parseInt(daysFilter));
+                data = data.filter(m => new Date(m.created_at) >= limit);
             }
+
+            const dayCounts = new Array(7).fill(0);
+            const hourCounts = new Array(24).fill(0);
+            const types = { "Klopapier": 0, "Seife": 0, "Handtücher": 0, "Defekt": 0 };
+            let done = 0;
+            let filteredData = [];
+
+            data.forEach(m => {
+                if(!m.typ) return;
+                let rawType = m.typ.toLowerCase().trim();
+                let cleanType = "";
+
+                if (rawType.includes("papier")) cleanType = "Klopapier";
+                else if (rawType.includes("seife")) cleanType = "Seife";
+                else if (rawType.includes("handtuch") || rawType.includes("handtücher")) cleanType = "Handtücher";
+                else if (rawType.includes("defekt") || rawType.includes("kaputt")) cleanType = "Defekt";
+
+                if (cleanType) {
+                    if (typeFilter === 'all' || typeFilter === cleanType) {
+                        const date = new Date(m.created_at);
+                        dayCounts[date.getDay()]++;
+                        hourCounts[date.getHours()]++;
+                        types[cleanType]++;
+                        if (m.status === 'erledigt') done++;
+                        filteredData.push({...m, displayType: cleanType});
+                    }
+                }
+            });
+
+            document.getElementById('stat-filter-label').innerText = typeFilter === 'all' ? "Gesamt" : typeFilter;
+            updateCards(filteredData.length, done, types);
+            updateRecentList(filteredData.slice(0, 5));
+            renderCharts(dayCounts, hourCounts, types);
         }
-    });
 
-    // Label für aktiven Filter aktualisieren
-    document.getElementById('stat-filter-label').innerText = typeFilter === 'all' ? "Gesamt" : typeFilter;
+        function updateCards(total, done, types) {
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-ratio').innerText = total > 0 ? Math.round((done / total) * 100) + "%" : "0%";
+            const top = Object.entries(types).sort((a,b) => b[1] - a[1])[0];
+            document.getElementById('stat-top').innerText = (top && top[1] > 0) ? top[0] : "--";
+        }
 
-    updateCards(filteredData.length, done, types);
-    updateRecentList(filteredData.slice(0, 5));
-    renderCharts(dayCounts, hourCounts, types);
-}
+        function updateRecentList(recentData) {
+            const list = document.getElementById('recent-list');
+            if (recentData.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 text-xs italic text-center py-4">Keine passenden Meldungen.</p>';
+                return;
+            }
+            list.innerHTML = recentData.map(m => `
+                <div class="bg-gray-50 p-3 rounded-2xl border-l-4 border-firma-yellow">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-[10px] font-black text-firma-green uppercase">${m.typ}</span>
+                        <span class="text-[9px] text-gray-400">${new Date(m.created_at).toLocaleDateString('de-DE')}</span>
+                    </div>
+                    <p class="text-[11px] text-gray-600 leading-tight italic">"${m.nachricht || 'Kein Kommentar'}"</p>
+                </div>
+            `).join('');
+        }
 
-function updateCards(total, done, types) {
-    document.getElementById('stat-total').innerText = total;
-    document.getElementById('stat-ratio').innerText = total > 0 ? Math.round((done / total) * 100) + "%" : "0%";
-    
-    // Den häufigsten Typ aus deinen 4 Kategorien finden
-    const top = Object.entries(types).sort((a,b) => b[1] - a[1])[0];
-    document.getElementById('stat-top').innerText = (top && top[1] > 0) ? top[0] : "--";
-}
+        function renderCharts(dayData, hourData, typeData) {
+            const commonOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
+            Object.values(charts).forEach(c => c.destroy());
 
-function renderCharts(dayData, hourData, typeData) {
-    const commonOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
-    Object.values(charts).forEach(c => c.destroy());
+            charts.days = new Chart(document.getElementById('weekdayChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'],
+                    datasets: [{ data: dayData, backgroundColor: '#006959', borderRadius: 10 }]
+                },
+                options: commonOptions
+            });
 
-    // Wochentage & Uhrzeiten bleiben wie gehabt...
-    charts.days = new Chart(document.getElementById('weekdayChart'), {
-        type: 'bar',
-        data: {
-            labels: ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'],
-            datasets: [{ data: dayData, backgroundColor: '#006959', borderRadius: 10 }]
-        },
-        options: commonOptions
-    });
+            charts.hours = new Chart(document.getElementById('hourChart'), {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => i + ':00'),
+                    datasets: [{ data: hourData, borderColor: '#F4B827', backgroundColor: 'rgba(244, 184, 39, 0.1)', fill: true, tension: 0.4 }]
+                },
+                options: commonOptions
+            });
 
-    charts.hours = new Chart(document.getElementById('hourChart'), {
-        type: 'line',
-        data: {
-            labels: Array.from({length: 24}, (_, i) => i + ':00'),
-            datasets: [{ data: hourData, borderColor: '#F4B827', backgroundColor: 'rgba(244, 184, 39, 0.1)', fill: true, tension: 0.4 }]
-        },
-        options: commonOptions
-    });
+            charts.types = new Chart(document.getElementById('typeChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(typeData),
+                    datasets: [{ 
+                        data: Object.values(typeData), 
+                        backgroundColor: ['#006959', '#F4B827', '#10b981', '#ef4444'] 
+                    }]
+                },
+                options: { ...commonOptions, plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 8, font: { size: 10 } } } } }
+            });
+        }
 
-    // Material-Verteilung: Zeigt jetzt NUR noch deine 4 Kategorien
-    charts.types = new Chart(document.getElementById('typeChart'), {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(typeData),
-            datasets: [{ 
-                data: Object.values(typeData), 
-                backgroundColor: ['#006959', '#F4B827', '#10b981', '#ef4444'] 
-            }]
-        },
-        options: { ...commonOptions, plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 8, font: { size: 10 } } } } }
-    });
-}
+        initStats();
+    </script>
+</body>
+</html>
