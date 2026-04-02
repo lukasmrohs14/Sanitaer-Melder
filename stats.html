@@ -134,7 +134,7 @@
                     if (m.status === 'erledigt') {
                         done++;
                         if (m.updated_at) {
-                            const duration = (new Date(m.updated_at) - date) / (1000 * 60);
+                            const duration = (new Date(m.erledigt_am) - date) / (1000 * 60);
                             if (duration > 0) {
                                 hourDurations[hour] += duration;
                                 hourDoneCount[hour]++;
