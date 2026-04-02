@@ -14,14 +14,14 @@
         * { -webkit-tap-highlight-color: transparent; }
         .fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        .overlay { backdrop-filter: blur(12px); background: rgba(255,255,255,0.9); z-index: 100; }
+        .disabled-btn { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
         
-        /* Loading Spinner */
         .loader {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #006959;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
+            width: 24px; height: 24px;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -29,86 +29,104 @@
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 flex items-center justify-center min-h-screen p-4 antialiased">
 
-    <div class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/20">
+    <div class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/20 relative min-h-[650px] flex flex-col">
         
         <div class="bg-white p-6 text-center relative border-b border-gray-100">
             <div class="absolute top-0 left-0 w-full h-2 bg-firma-yellow"></div>
-            <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" alt="Voigt Logistik Logo" class="mx-auto mb-3 h-10 object-contain">
-            <h1 class="text-firma-green font-black uppercase tracking-widest text-base">Service-Ruf</h1>
+            <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" alt="Logo" class="mx-auto mb-3 h-10 object-contain">
+            <div class="flex justify-center items-center gap-2">
+                <h1 id="current-location-label" class="text-firma-green font-black uppercase tracking-widest text-[11px]">Standort wählen...</h1>
+                <button onclick="showPopup()" class="text-[9px] bg-gray-100 px-2 py-1 rounded-full font-bold text-gray-400 hover:text-firma-yellow uppercase transition-all underline">📍 Ändern</button>
+            </div>
         </div>
 
-        <div id="main-ui" class="p-5 space-y-4">
+        <div id="main-ui" class="p-5 space-y-4 flex-grow flex flex-col justify-between">
             
-            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center px-1 font-bold">Schnell-Meldung</p>
-            <div class="grid grid-cols-1 gap-3">
-                <button onclick="senden('Seife')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:bg-white active:scale-[0.97] transition-all group">
-                    <span class="text-3xl mr-5">🧼</span>
-                    <span class="font-black uppercase text-firma-green text-lg tracking-tight text-left">Seife leer</span>
-                </button>
+            <div class="space-y-3">
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center font-bold">Schnell-Meldung</p>
+                
+                <div class="grid grid-cols-1 gap-3">
+                    <button id="btn-Seife" onclick="senden('Seife')" class="flex items-center p-4 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:bg-white active:scale-[0.97] transition-all group">
+                        <span class="text-3xl mr-4">🧼</span>
+                        <div class="text-left">
+                            <span class="block font-black uppercase text-firma-green text-base leading-tight">Seife leer</span>
+                            <span class="status-text text-[9px] font-bold text-gray-300 uppercase">Verfügbar</span>
+                        </div>
+                    </button>
 
-                <button onclick="senden('Klopapier')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:bg-white active:scale-[0.97] transition-all group">
-                    <span class="text-3xl mr-5">🧻</span>
-                    <span class="font-black uppercase text-firma-green text-lg tracking-tight text-left">Klopapier leer</span>
-                </button>
+                    <button id="btn-Klopapier" onclick="senden('Klopapier')" class="flex items-center p-4 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:bg-white active:scale-[0.97] transition-all group">
+                        <span class="text-3xl mr-4">🧻</span>
+                        <div class="text-left">
+                            <span class="block font-black uppercase text-firma-green text-base leading-tight">Klopapier leer</span>
+                            <span class="status-text text-[9px] font-bold text-gray-300 uppercase">Verfügbar</span>
+                        </div>
+                    </button>
 
-                <button onclick="senden('Handtücher')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:bg-white active:scale-[0.97] transition-all group">
-                    <span class="text-3xl mr-5">🖐️</span>
-                    <span class="font-black uppercase text-firma-green text-lg tracking-tight text-left">Handtücher leer</span>
-                </button>
+                    <button id="btn-Handtücher" onclick="senden('Handtücher')" class="flex items-center p-4 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:bg-white active:scale-[0.97] transition-all group">
+                        <span class="text-3xl mr-4">🖐️</span>
+                        <div class="text-left">
+                            <span class="block font-black uppercase text-firma-green text-base leading-tight">Handtücher leer</span>
+                            <span class="status-text text-[9px] font-bold text-gray-300 uppercase">Verfügbar</span>
+                        </div>
+                    </button>
+                </div>
             </div>
 
-            <div class="mt-4 pt-4 border-t border-gray-100 space-y-4">
-                
+            <div class="pt-4 border-t border-gray-100 space-y-4">
                 <div class="bg-gray-50 p-4 rounded-2xl border-2 border-gray-100">
-                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1 text-center font-bold">Foto hinzufügen (optional)</label>
-                    
                     <div class="flex items-center gap-3">
                         <input type="file" id="foto-input" accept="image/*" capture="environment" class="hidden" onchange="vorschauBild(this)">
-                        
-                        <button onclick="document.getElementById('foto-input').click()" class="bg-gray-200 text-gray-700 p-4 rounded-xl active:scale-95 transition-all text-xl shadow-md">
-                            📸
-                        </button>
-                        
+                        <button onclick="document.getElementById('foto-input').click()" class="bg-gray-200 text-gray-700 p-4 rounded-xl active:scale-95 transition-all text-xl shadow-md">📸</button>
                         <div id="foto-vorschau-container" class="hidden flex items-center gap-2 flex-grow">
                             <img id="foto-vorschau" src="" class="h-14 w-14 object-cover rounded-lg border-2 border-firma-green shadow-md">
-                            <button onclick="entferneFoto()" class="text-xs text-red-500 font-bold uppercase p-2 bg-red-50 rounded-lg transition-colors hover:bg-red-100">Löschen</button>
+                            <button onclick="entferneFoto()" class="text-[10px] text-red-500 font-bold uppercase p-2 bg-red-50 rounded-lg">Löschen</button>
                         </div>
-                        <p id="foto-text" class="text-sm text-gray-400 flex-grow font-medium">Tippen Sie auf das Symbol, um ein Foto aufzunehmen</p>
+                        <p id="foto-text" class="text-[11px] text-gray-400 flex-grow font-medium">Foto hinzufügen (optional)</p>
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1 text-center font-bold">Bitte in das Textfeld Sonstige Mitteilung/Defekt schreiben</label>
-                    <textarea id="gast-nachricht" placeholder="Geben Sie hier ggf. Details ein..." 
-                        class="w-full p-4 bg-firma-green border-2 border-firma-green rounded-2xl text-sm text-white placeholder-green-100/50 outline-none focus:ring-2 focus:ring-firma-yellow transition-all resize-none shadow-inner" rows="3"></textarea>
-                </div>
+                <textarea id="gast-nachricht" placeholder="Sonstige Mitteilung / Defekt..." 
+                    class="w-full p-4 bg-firma-green border-2 border-firma-green rounded-2xl text-sm text-white placeholder-green-100/50 outline-none focus:ring-2 focus:ring-firma-yellow transition-all resize-none shadow-inner h-24"></textarea>
 
                 <button onclick="senden('Sonstiges')" class="w-full bg-firma-green text-white p-4 rounded-2xl font-black uppercase shadow-lg active:scale-[0.97] transition-all tracking-wider text-sm flex items-center justify-center gap-2 group">
-                    Senden
-                    <span class="text-lg group-active:translate-x-1 transition-transform">➡</span>
+                    Senden ➡
                 </button>
             </div>
         </div>
 
-        <div id="success-ui" class="hidden p-10 text-center fade-in space-y-4">
-            <div id="status-icon" class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
-            </div>
-            
+        <div id="success-ui" class="hidden p-10 text-center fade-in space-y-4 flex-grow flex flex-col justify-center">
+            <div id="status-icon" class="mx-auto flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4 text-green-600 text-3xl">✓</div>
             <div id="uploading-ui" class="hidden flex flex-col items-center gap-3">
                 <div class="loader"></div>
-                <p class="text-firma-green font-bold text-sm">Bild wird hochgeladen...</p>
+                <p class="text-firma-green font-bold text-sm uppercase">Bild wird hochgeladen...</p>
             </div>
-
             <div id="done-ui">
-                <h2 class="font-black text-xl text-firma-green uppercase mb-2 leading-tight">Vielen Dank!</h2>
-                <p class="text-gray-600 font-bold leading-tight">Die Immobilienabteilung wurde informiert.</p>
-                
-                <div class="mt-8 px-4">
-                    <div class="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <div id="progress-bar" class="h-full bg-firma-yellow w-0 transition-all duration-[3000ms] ease-linear"></div>
-                    </div>
+                <h2 class="font-black text-xl text-firma-green uppercase mb-2">Vielen Dank!</h2>
+                <p class="text-gray-600 font-bold text-sm">Meldung wurde für <br><span id="success-location" class="text-firma-yellow"></span> gesendet.</p>
+                <div class="mt-8 px-4"><div class="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden"><div id="progress-bar" class="h-full bg-firma-yellow w-0 transition-all duration-[3000ms] ease-linear"></div></div></div>
+            </div>
+        </div>
+
+        <div id="popup" class="absolute inset-0 overlay flex items-center justify-center p-6 fade-in">
+            <div class="bg-white w-full p-8 rounded-[2.5rem] shadow-2xl border-b-8 border-firma-yellow space-y-5 text-center">
+                <div class="text-4xl">📍</div>
+                <h3 class="font-black text-firma-green uppercase text-sm">Standort wählen</h3>
+                <div class="space-y-2">
+                    <select id="pop-standort" class="w-full p-4 bg-gray-100 rounded-2xl font-bold text-xs outline-none border-2 border-transparent focus:border-firma-yellow">
+                        <option value="">Standort...</option>
+                        <option value="HVS">HVS</option>
+                        <option value="LZW">LZW</option>
+                        <option value="LZS">LZS</option>
+                        <option value="LZO">LZO</option>
+                    </select>
+                    <select id="pop-etage" class="w-full p-4 bg-gray-100 rounded-2xl font-bold text-xs outline-none border-2 border-transparent focus:border-firma-yellow">
+                        <option value="">Etage...</option>
+                        <option value="EG">Erdgeschoss</option>
+                        <option value="1. OG">1. Etage</option>
+                        <option value="2. OG">2. Etage</option>
+                    </select>
                 </div>
+                <button onclick="confirmLocation()" class="w-full bg-firma-yellow text-white p-4 rounded-2xl font-black uppercase text-xs">Bestätigen</button>
             </div>
         </div>
     </div>
@@ -119,13 +137,46 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let selectedFile = null;
+        let currentS = "";
+        let currentE = "";
 
-        // Funktion zur Bild-Vorschau
+        function showPopup() { document.getElementById('popup').classList.remove('hidden'); }
+
+        async function confirmLocation() {
+            currentS = document.getElementById('pop-standort').value;
+            currentE = document.getElementById('pop-etage').value;
+            if (!currentS || !currentE) { alert("Bitte beides wählen!"); return; }
+            
+            document.getElementById('current-location-label').innerText = `${currentS} | ${currentE}`;
+            document.getElementById('popup').classList.add('hidden');
+            checkStatus();
+        }
+
+        async function checkStatus() {
+            const types = ['Seife', 'Klopapier', 'Handtücher'];
+            types.forEach(t => {
+                const btn = document.getElementById('btn-' + t);
+                btn.classList.remove('disabled-btn');
+                btn.querySelector('.status-text').innerText = "Verfügbar";
+            });
+
+            const { data } = await _supabase.from('meldungen').select('typ').eq('standort', currentS).eq('etage', currentE).eq('status', 'offen');
+            if (data) {
+                data.forEach(m => {
+                    const btn = document.getElementById('btn-' + m.typ);
+                    if (btn) {
+                        btn.classList.add('disabled-btn');
+                        btn.querySelector('.status-text').innerText = "Bereits gemeldet";
+                    }
+                });
+            }
+        }
+
         function vorschauBild(input) {
             if (input.files && input.files[0]) {
                 selectedFile = input.files[0];
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = e => {
                     document.getElementById('foto-vorschau').src = e.target.result;
                     document.getElementById('foto-vorschau-container').classList.remove('hidden');
                     document.getElementById('foto-text').classList.add('hidden');
@@ -134,10 +185,9 @@
             }
         }
 
-        // Funktion zum Löschen des ausgewählten Fotos
         function entferneFoto() {
             selectedFile = null;
-            document.getElementById('foto-input').value = ''; // Input resetten
+            document.getElementById('foto-input').value = '';
             document.getElementById('foto-vorschau-container').classList.add('hidden');
             document.getElementById('foto-text').classList.remove('hidden');
         }
@@ -146,73 +196,52 @@
             const nachricht = document.getElementById('gast-nachricht').value;
             let fotoUrl = null;
 
-            // UI Wechsel & Lade-Zustand zeigen
             document.getElementById('main-ui').classList.add('hidden');
             document.getElementById('success-ui').classList.remove('hidden');
-            
-            // Falls ein Foto da ist, Lade-UI zeigen
-            if (selectedFile) {
-                document.getElementById('status-icon').classList.add('hidden');
-                document.getElementById('done-ui').classList.add('hidden');
-                document.getElementById('uploading-ui').classList.remove('hidden');
-            }
+            document.getElementById('success-location').innerText = `${currentS}, ${currentE}`;
 
             try {
-                // 1. Ggf. Foto hochladen
                 if (selectedFile) {
-                    const fileName = `${Date.now()}_${selectedFile.name}`;
-                    const { data, error: uploadError } = await _supabase.storage
-                        .from('reparatur-fotos')
-                        .upload(fileName, selectedFile);
+                    document.getElementById('status-icon').classList.add('hidden');
+                    document.getElementById('done-ui').classList.add('hidden');
+                    document.getElementById('uploading-ui').classList.remove('hidden');
 
+                    const fileName = `${Date.now()}_${selectedFile.name}`;
+                    const { data, error: uploadError } = await _supabase.storage.from('reparatur-fotos').upload(fileName, selectedFile);
                     if (uploadError) throw uploadError;
 
-                    // Öffentliche URL abrufen
-                    const { data: publicUrlData } = _supabase.storage
-                        .from('reparatur-fotos')
-                        .getPublicUrl(fileName);
-                    
+                    const { data: publicUrlData } = _supabase.storage.from('reparatur-fotos').getPublicUrl(fileName);
                     fotoUrl = publicUrlData.publicUrl;
-                }
 
-                // Lade-UI verstecken, Erfolgs-UI zeigen
-                if (selectedFile) {
                     document.getElementById('status-icon').classList.remove('hidden');
                     document.getElementById('done-ui').classList.remove('hidden');
                     document.getElementById('uploading-ui').classList.add('hidden');
                 }
 
-                // Fortschrittsbalken starten
                 setTimeout(() => { document.getElementById('progress-bar').style.width = '100%'; }, 50);
 
-                // 2. Senden an Supabase (Speichern in der Spalte 'foto_url'!)
-                const insertData = { typ: typ, nachricht: nachricht, status: 'offen' };
-                if (fotoUrl) {
-                    // Wir speichern die URL in der neuen 'foto_url' Spalte
-                    insertData.foto_url = fotoUrl;
-                }
+                const { error } = await _supabase.from('meldungen').insert([{
+                    typ: typ, standort: currentS, etage: currentE, nachricht: nachricht, foto_url: fotoUrl, status: 'offen'
+                }]);
 
-                const { error: insertError } = await _supabase
-                    .from('meldungen')
-                    .insert([insertData]);
+                if (error) throw error;
 
-                if (insertError) throw insertError;
-
-                // Reset nach 3 Sekunden
                 setTimeout(() => {
                     document.getElementById('main-ui').classList.remove('hidden');
                     document.getElementById('success-ui').classList.add('hidden');
                     document.getElementById('progress-bar').style.width = '0%';
-                    document.getElementById('gast-nachricht').value = ''; 
-                    entferneFoto(); // Foto-Vorschau leeren
+                    document.getElementById('gast-nachricht').value = '';
+                    entferneFoto();
+                    checkStatus();
                 }, 3000);
 
             } catch (err) {
-                console.error("Fehler:", err);
-                alert("Fehler beim Senden oder Foto-Upload! Bitte Seite neu laden.");
+                alert("Fehler!");
                 location.reload();
             }
         }
     </script>
+</body>
+</html>
 </body>
 </html>
