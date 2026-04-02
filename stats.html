@@ -133,7 +133,8 @@
                     
                     if (m.status === 'erledigt') {
                         done++;
-                        if (m.updated_at) {
+                        // Korrektur: Nutzt jetzt die korrekte Spalte erledigt_am
+                        if (m.erledigt_am) { 
                             const duration = (new Date(m.erledigt_am) - date) / (1000 * 60);
                             if (duration > 0) {
                                 hourDurations[hour] += duration;
@@ -204,8 +205,16 @@
                 options: {
                     ...commonOptions,
                     scales: {
-                        y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Anzahl' } },
-                        y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Minuten' } }
+                        y: { type: 'linear', display: true, position: 'left', beginAtZero: true, title: { display: true, text: 'Anzahl' } },
+                        y1: { 
+                            type: 'linear', 
+                            display: true, 
+                            position: 'right', 
+                            beginAtZero: true, // Fix: Startet bei 0
+                            suggestedMax: 30,  // Fix: Schöne Skalierung
+                            grid: { drawOnChartArea: false }, 
+                            title: { display: true, text: 'Minuten' } 
+                        }
                     }
                 }
             });
@@ -224,4 +233,5 @@
         initStats();
     </script>
 </body>
+</html>
 </html>
