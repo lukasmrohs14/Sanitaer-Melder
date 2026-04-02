@@ -10,39 +10,30 @@
         .text-firma-green { color: #006959; }
         .bg-firma-green { background-color: #006959; }
         .bg-firma-yellow { background-color: #F4B827; }
-        .border-firma-green { border-color: #006959; }
         * { -webkit-tap-highlight-color: transparent; }
         .fade-in { animation: fadeIn 0.3s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="bg-gray-100 font-sans text-gray-800 flex items-center justify-center min-h-screen p-4 antialiased">
+<body class="bg-gray-100 font-sans text-gray-800 min-h-screen p-4 antialiased">
 
-    <div class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/20">
+    <div class="max-w-md mx-auto bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/20">
         
-        <div class="bg-white p-8 text-center relative border-b border-gray-100">
+        <div class="bg-white p-6 text-center relative border-b border-gray-100">
             <div class="absolute top-0 left-0 w-full h-2 bg-firma-yellow"></div>
-            <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" 
-                 alt="Voigt Logistik Logo" 
-                 class="mx-auto mb-4 h-12 object-contain">
-            <h1 class="text-firma-green font-black uppercase tracking-widest text-lg">Reinigung-Dashboard</h1>
+            <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" alt="Logo" class="mx-auto mb-2 h-10 object-contain">
+            <h1 class="text-firma-green font-black uppercase tracking-widest text-sm">Reinigung-Dashboard</h1>
         </div>
 
         <div id="login-section" class="p-8 space-y-5 fade-in">
-            <p class="text-center text-gray-400 font-black uppercase text-[10px] tracking-[0.2em]">Autorisierung erforderlich</p>
-            <input type="password" id="pin" placeholder="PIN" 
-                class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-center text-3xl outline-none focus:border-firma-yellow transition-all shadow-inner placeholder:text-gray-300">
-            <button onclick="checkPin()" 
-                class="w-full bg-firma-yellow text-white p-4 rounded-2xl font-black uppercase shadow-lg active:scale-[0.97] transition-all tracking-wider text-sm">
-                Einloggen
-            </button>
+            <input type="password" id="pin" placeholder="PIN" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-center text-3xl outline-none focus:border-firma-yellow shadow-inner">
+            <button onclick="checkPin()" class="w-full bg-firma-yellow text-white p-4 rounded-2xl font-black uppercase shadow-lg active:scale-95 transition-all">Einloggen</button>
         </div>
 
-        <div id="admin-content" class="hidden p-6 space-y-6 fade-in">
-            <div class="mt-2 pt-4 border-t border-gray-100 text-center">
-                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Reinigung durch:</label>
-                <select id="admin-name-select" 
-                    class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold text-firma-green outline-none focus:border-firma-yellow transition-all cursor-pointer shadow-inner appearance-none text-center uppercase tracking-wider">
+        <div id="admin-content" class="hidden p-4 space-y-6 fade-in">
+            <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 text-center">Aktive Kraft:</label>
+                <select id="admin-name-select" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-firma-green outline-none appearance-none text-center uppercase">
                     <option value="Felix">👤 Felix</option>
                     <option value="Birgit">👤 Birgit</option>
                     <option value="Gast-Reinigung">🛠️ Gast-Reinigung</option>
@@ -50,15 +41,16 @@
             </div>
 
             <div class="space-y-4">
-                <div class="flex justify-between items-center px-1">
-                    <h2 class="text-firma-green font-black uppercase tracking-tight text-sm text-left">Offene Aufgaben</h2>
+                <div class="flex justify-between items-center">
+                    <h2 class="text-firma-green font-black uppercase text-xs">Offene Aufgaben</h2>
                     <div class="flex gap-2">
-                        <a href="stats.html" class="text-[10px] bg-firma-green text-white px-3 py-1.5 rounded-full font-bold hover:bg-opacity-90 uppercase transition-colors flex items-center gap-1">📊 Stats</a>
-                        <button onclick="loadMeldungen()" class="text-[10px] bg-gray-100 text-gray-500 px-3 py-1.5 rounded-full font-bold hover:bg-gray-200 uppercase transition-colors flex items-center gap-1">🔄</button>
+                        <a href="stats.html" class="text-[10px] bg-firma-green text-white px-3 py-1.5 rounded-full font-bold uppercase tracking-tight">📊 Stats</a>
+                        <button onclick="loadMeldungen()" class="text-[10px] bg-gray-100 text-gray-500 px-3 py-1.5 rounded-full font-bold uppercase">🔄 Refresh</button>
                     </div>
                 </div>
-                <div id="liste" class="space-y-3">
-                    <p class="text-center text-gray-300 py-10 font-bold uppercase text-[10px] tracking-widest">Lade Aufgaben...</p>
+
+                <div id="liste" class="space-y-4">
+                    <p class="text-center text-gray-300 py-10 font-bold uppercase text-[10px]">Lade Aufgaben...</p>
                 </div>
             </div>
         </div>
@@ -73,7 +65,7 @@
 
         async function checkPin() {
             const eingabe = document.getElementById('pin').value;
-            const { data: isValid, error } = await _supabase.rpc('check_admin_pin', { input_pin: eingabe });
+            const { data: isValid } = await _supabase.rpc('check_admin_pin', { input_pin: eingabe });
             if (isValid) {
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('admin-content').classList.remove('hidden');
@@ -90,46 +82,48 @@
         }
 
         async function loadMeldungen() {
-            const { data, error } = await _supabase.from('meldungen').select('*').eq('status', 'offen').order('created_at', { ascending: false });
+            const { data, error } = await _supabase.from('meldungen').select('*').eq('status', 'offen').order('standort', { ascending: true }).order('created_at', { ascending: true });
             const liste = document.getElementById('liste');
             liste.innerHTML = '';
 
             if (data.length === 0) {
-                liste.innerHTML = `<div class="bg-gray-50 p-10 rounded-3xl border-2 border-dashed border-gray-200 text-center"><p class="text-gray-300 font-black uppercase text-[10px] tracking-widest">✨ Alles sauber!</p></div>`;
+                liste.innerHTML = `<div class="bg-gray-50 p-10 rounded-3xl text-center"><p class="text-gray-300 font-black uppercase text-[10px]">✨ Alles erledigt!</p></div>`;
                 return;
             }
 
+            let lastLocation = "";
+
             data.forEach(m => {
-                const div = document.createElement('div');
-                div.className = "bg-white p-4 rounded-2xl shadow-md border-l-8 border-firma-green flex flex-col gap-3 transition-all hover:shadow-lg fade-in";
+                // Header per Standort einfügen
+                if (m.standort !== lastLocation) {
+                    lastLocation = m.standort;
+                    const header = document.createElement('div');
+                    header.className = "pt-2 pb-1 border-b-2 border-gray-100 flex items-center";
+                    header.innerHTML = `<span class="bg-firma-green text-white text-[9px] px-3 py-0.5 rounded-full font-black uppercase tracking-widest">${m.standort}</span>`;
+                    liste.appendChild(header);
+                }
+
+                const timeDiff = Math.floor((new Date() - new Date(m.created_at)) / 60000);
+                const isUrgent = timeDiff > 20; // Rot markieren wenn > 20 Min
                 
-                let icon = '⚠️';
-                const t = (m.typ || "").toLowerCase();
-                if (t.includes("papier")) icon = '🧻';
-                else if (t.includes("seife")) icon = '🧼';
-                else if (t.includes("handtuch")) icon = '🖐️';
+                const div = document.createElement('div');
+                div.className = `bg-white p-4 rounded-2xl shadow-sm border-l-4 ${isUrgent ? 'border-red-500' : 'border-firma-green'} flex items-center justify-between gap-4 transition-all active:scale-[0.98] fade-in`;
+                
+                const icon = (m.typ || "").toLowerCase().includes("papier") ? '🧻' : 
+                             (m.typ || "").toLowerCase().includes("seife") ? '🧼' : 
+                             (m.typ || "").toLowerCase().includes("handtuch") ? '🖐️' : '📋';
 
                 div.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="bg-firma-green text-white text-[9px] px-2 py-0.5 rounded font-black uppercase">${m.standort || '???'}</span>
-                                <span class="bg-firma-yellow text-white text-[9px] px-2 py-0.5 rounded font-black uppercase">${m.etage || '???'}</span>
-                            </div>
-                            <p class="font-black text-firma-green uppercase text-xs flex items-center gap-2">
-                                <span class="text-lg">${icon}</span> ${m.typ}
-                            </p>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-firma-yellow text-[10px] font-black uppercase tracking-tighter">${m.etage}</span>
+                            <span class="text-[9px] ${isUrgent ? 'text-red-500 font-bold' : 'text-gray-300'} font-medium uppercase">${timeDiff} Min</span>
                         </div>
-                        <p class="text-[9px] text-gray-300 font-bold uppercase whitespace-nowrap">${new Date(m.created_at).toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'})} Uhr</p>
+                        <h3 class="font-black text-gray-700 uppercase text-sm truncate leading-none">${icon} ${m.typ}</h3>
+                        ${m.nachricht ? `<p class="text-[10px] text-gray-400 italic truncate mt-1">"${m.nachricht}"</p>` : ''}
                     </div>
-
-                    ${m.nachricht ? `<p class="text-[11px] text-gray-600 italic bg-gray-50 p-2 rounded-lg border border-gray-100">"${m.nachricht}"</p>` : ''}
-                    
-                    ${m.foto_url ? `<a href="${m.foto_url}" target="_blank"><img src="${m.foto_url}" class="h-24 w-full object-cover rounded-xl border border-gray-100 shadow-sm"></a>` : ''}
-
-                    <button onclick="erledigen('${m.id}')" 
-                        class="w-full bg-firma-yellow text-white py-3 rounded-xl font-black text-[10px] shadow-md active:scale-95 transition-all uppercase">
-                        Als Erledigt markieren
+                    <button onclick="erledigen('${m.id}')" class="bg-firma-yellow text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-md active:bg-firma-green transition-colors">
+                        <span class="text-xl font-bold">✓</span>
                     </button>`;
                 liste.appendChild(div);
             });
@@ -142,7 +136,6 @@
                 erledigt_von: name, 
                 erledigt_am: new Date().toISOString() 
             }).eq('id', id);
-            
             if (error) alert("Fehler: " + error.message);
             else loadMeldungen();
         }
