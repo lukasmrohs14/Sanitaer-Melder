@@ -21,7 +21,6 @@
 <body class="bg-gray-50 p-4 md:p-8 antialiased">
 
     <div class="max-w-6xl mx-auto space-y-6">
-        
         <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border-b-8 border-firma-yellow fade-in flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4">
                 <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" alt="Logo" class="h-8 object-contain">
@@ -30,14 +29,12 @@
                     <p class="text-gray-400 text-[10px] font-bold uppercase">Logistik-Monitoring</p>
                 </div>
             </div>
-            
             <div class="flex flex-wrap justify-center gap-2">
                 <select id="time-filter" onchange="initStats()" class="bg-gray-100 border-none rounded-xl px-3 py-2 text-[10px] font-bold text-gray-600 outline-none focus:ring-2 focus:ring-firma-yellow cursor-pointer">
                     <option value="all" selected>Gesamt-Zeitraum</option>
                     <option value="30">Letzte 30 Tage</option>
                     <option value="7">Letzte 7 Tage</option>
                 </select>
-
                 <select id="type-filter" onchange="initStats()" class="bg-gray-100 border-none rounded-xl px-3 py-2 text-[10px] font-bold text-gray-600 outline-none focus:ring-2 focus:ring-firma-yellow cursor-pointer">
                     <option value="all">Alle Materialien</option>
                     <option value="Klopapier">🧻 Klopapier</option>
@@ -45,7 +42,6 @@
                     <option value="Handtücher">🖐️ Handtücher</option>
                     <option value="Defekt">🛠️ Defekt</option>
                 </select>
-
                 <a href="admin.html" class="bg-gray-800 text-white px-5 py-2 rounded-xl font-bold text-[10px] uppercase hover:bg-black transition-all shadow-md">Zurück</a>
             </div>
         </div>
@@ -71,22 +67,19 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
             <div class="bg-white p-6 rounded-[2.5rem] shadow-lg">
-                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">🕒 Muster nach Uhrzeit</h2>
+                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">🕒 Muster & Bearbeitungsdauer</h2>
                 <div class="h-[250px]"><canvas id="hourChart"></canvas></div>
             </div>
-
             <div class="bg-white p-6 rounded-[2.5rem] shadow-lg">
                 <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">📅 Muster nach Wochentag</h2>
                 <div class="h-[250px]"><canvas id="weekdayChart"></canvas></div>
             </div>
-
             <div class="bg-white p-6 rounded-[2.5rem] shadow-lg">
                 <h2 class="text-firma-green font-black uppercase text-[11px] mb-4 text-center">📦 Material-Verteilung</h2>
                 <div class="max-w-[200px] mx-auto"><canvas id="typeChart"></canvas></div>
             </div>
-
             <div class="bg-white p-6 rounded-[2.5rem] shadow-lg flex flex-col">
-                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">📝 Letzte Details zum Filter</h2>
+                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">📝 Letzte Details</h2>
                 <div id="recent-list" class="space-y-3 custom-scroll overflow-y-auto max-h-[220px] pr-2 flex-grow">
                     <p class="text-gray-400 text-xs italic">Lade Daten...</p>
                 </div>
@@ -101,129 +94,134 @@
 
         let charts = {}; 
 
-      // Ersetze deine vorhandene initStats Funktion durch diese:
-async function initStats() {
-    const daysFilter = document.getElementById('time-filter').value;
-    const typeFilter = document.getElementById('type-filter').value;
-    
-    let { data, error } = await _supabase.from('meldungen').select('*').order('created_at', { ascending: false });
-    if (error) { console.error(error); return; }
+        async function initStats() {
+            const daysFilter = document.getElementById('time-filter').value;
+            const typeFilter = document.getElementById('type-filter').value;
+            
+            let { data, error } = await _supabase.from('meldungen').select('*').order('created_at', { ascending: false });
+            if (error) { console.error(error); return; }
 
-    if (daysFilter !== 'all') {
-        const limit = new Date();
-        limit.setDate(limit.getDate() - parseInt(daysFilter));
-        data = data.filter(m => new Date(m.created_at) >= limit);
-    }
+            if (daysFilter !== 'all') {
+                const limit = new Date();
+                limit.setDate(limit.getDate() - parseInt(daysFilter));
+                data = data.filter(m => new Date(m.created_at) >= limit);
+            }
 
-    const dayCounts = new Array(7).fill(0);
-    const hourCounts = new Array(24).fill(0);
-    const hourDurations = new Array(24).fill(0); // Summe der Minuten pro Stunde
-    const hourDoneCount = new Array(24).fill(0); // Anzahl erledigter Meldungen pro Stunde
-    
-    const types = { "Klopapier": 0, "Seife": 0, "Handtücher": 0, "Defekt": 0 };
-    let done = 0;
-    let filteredData = [];
+            const dayCounts = new Array(7).fill(0);
+            const hourCounts = new Array(24).fill(0);
+            const hourDurations = new Array(24).fill(0); 
+            const hourDoneCount = new Array(24).fill(0); 
+            const types = { "Klopapier": 0, "Seife": 0, "Handtücher": 0, "Defekt": 0 };
+            let done = 0;
+            let filteredData = [];
 
-    data.forEach(m => {
-        if(!m.typ) return;
-        let rawType = m.typ.toLowerCase().trim();
-        let cleanType = "";
+            data.forEach(m => {
+                if(!m.typ) return;
+                let rawType = m.typ.toLowerCase().trim();
+                let cleanType = "";
+                if (rawType.includes("papier")) cleanType = "Klopapier";
+                else if (rawType.includes("seife")) cleanType = "Seife";
+                else if (rawType.includes("handtuch") || rawType.includes("handtücher")) cleanType = "Handtücher";
+                else if (rawType.includes("defekt") || rawType.includes("kaputt")) cleanType = "Defekt";
 
-        if (rawType.includes("papier")) cleanType = "Klopapier";
-        else if (rawType.includes("seife")) cleanType = "Seife";
-        else if (rawType.includes("handtuch") || rawType.includes("handtücher")) cleanType = "Handtücher";
-        else if (rawType.includes("defekt") || rawType.includes("kaputt")) cleanType = "Defekt";
-
-        if (cleanType) {
-            if (typeFilter === 'all' || typeFilter === cleanType) {
-                const date = new Date(m.created_at);
-                const hour = date.getHours();
-                
-                dayCounts[date.getDay()]++;
-                hourCounts[hour]++;
-                types[cleanType]++;
-                
-                if (m.status === 'erledigt') {
-                    done++;
-                    // Berechnung der Dauer in Minuten
-                    if (m.updated_at) {
-                        const duration = (new Date(m.updated_at) - date) / (1000 * 60);
-                        if (duration > 0) {
-                            hourDurations[hour] += duration;
-                            hourDoneCount[hour]++;
+                if (cleanType && (typeFilter === 'all' || typeFilter === cleanType)) {
+                    const date = new Date(m.created_at);
+                    const hour = date.getHours();
+                    dayCounts[date.getDay()]++;
+                    hourCounts[hour]++;
+                    types[cleanType]++;
+                    
+                    if (m.status === 'erledigt') {
+                        done++;
+                        if (m.updated_at) {
+                            const duration = (new Date(m.updated_at) - date) / (1000 * 60);
+                            if (duration > 0) {
+                                hourDurations[hour] += duration;
+                                hourDoneCount[hour]++;
+                            }
                         }
                     }
+                    filteredData.push({...m, displayType: cleanType});
                 }
-                filteredData.push({...m, displayType: cleanType});
-            }
+            });
+
+            const avgDurations = hourDurations.map((total, i) => hourDoneCount[i] > 0 ? Math.round(total / hourDoneCount[i]) : 0);
+            document.getElementById('stat-filter-label').innerText = typeFilter === 'all' ? "Gesamt" : typeFilter;
+            
+            updateCards(filteredData.length, done, types);
+            updateRecentList(filteredData.slice(0, 5));
+            renderCharts(dayCounts, hourCounts, avgDurations, types);
         }
-    });
 
-    // Durchschnittliche Dauer pro Stunde berechnen
-    const avgDurations = hourDurations.map((total, i) => 
-        hourDoneCount[i] > 0 ? Math.round(total / hourDoneCount[i]) : 0
-    );
-
-    document.getElementById('stat-filter-label').innerText = typeFilter === 'all' ? "Gesamt" : typeFilter;
-    updateCards(filteredData.length, done, types);
-    updateRecentList(filteredData.slice(0, 5));
-    renderCharts(dayCounts, hourCounts, avgDurations, types);
-}
-
-// Ersetze den entsprechenden Teil in renderCharts (hourChart):
-function renderCharts(dayData, hourData, durationData, typeData) {
-    const commonOptions = { responsive: true, maintainAspectRatio: false };
-    Object.values(charts).forEach(c => c.destroy());
-
-    // ... (weekdayChart bleibt gleich)
-
-    // 🕒 Uhrzeit Chart mit zwei Linien
-    charts.hours = new Chart(document.getElementById('hourChart'), {
-        type: 'line',
-        data: {
-            labels: Array.from({length: 24}, (_, i) => i + ':00'),
-            datasets: [
-                {
-                    label: 'Anzahl Meldungen',
-                    data: hourData,
-                    borderColor: '#006959',
-                    backgroundColor: 'rgba(0, 105, 89, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    yAxisID: 'y',
-                },
-                {
-                    label: '∅ Dauer (Min)',
-                    data: durationData,
-                    borderColor: '#F4B827',
-                    borderDash: [5, 5], // Gestrichelte Linie
-                    pointStyle: 'circle',
-                    fill: false,
-                    tension: 0.4,
-                    yAxisID: 'y1',
-                }
-            ]
-        },
-        options: {
-            ...commonOptions,
-            plugins: { legend: { display: true, position: 'top', labels: { size: 10 } } },
-            scales: {
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    title: { display: true, text: 'Meldungen', font: { size: 10 } }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    grid: { drawOnChartArea: false }, // Verhindert Gitter-Chaos
-                    title: { display: true, text: 'Minuten', font: { size: 10 } }
-                }
-            }
+        function updateCards(total, done, types) {
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-ratio').innerText = total > 0 ? Math.round((done / total) * 100) + "%" : "0%";
+            const top = Object.entries(types).sort((a,b) => b[1] - a[1])[0];
+            document.getElementById('stat-top').innerText = (top && top[1] > 0) ? top[0] : "--";
         }
-    });
 
-    // ... (typeChart bleibt gleich)
-}
+        function updateRecentList(recentData) {
+            const list = document.getElementById('recent-list');
+            if (recentData.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 text-xs italic text-center py-4">Keine Daten vorhanden.</p>';
+                return;
+            }
+            list.innerHTML = recentData.map(m => `
+                <div class="bg-gray-50 p-3 rounded-2xl border-l-4 border-firma-yellow">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-[10px] font-black text-firma-green uppercase">${m.typ}</span>
+                        <span class="text-[9px] text-gray-400">${new Date(m.created_at).toLocaleDateString('de-DE')}</span>
+                    </div>
+                    <p class="text-[11px] text-gray-600 italic">"${m.nachricht || 'Kein Kommentar'}"</p>
+                </div>
+            `).join('');
+        }
+
+        function renderCharts(dayData, hourData, durationData, typeData) {
+            const commonOptions = { responsive: true, maintainAspectRatio: false };
+            Object.values(charts).forEach(c => c.destroy());
+
+            // 📅 Wochentage
+            charts.days = new Chart(document.getElementById('weekdayChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'],
+                    datasets: [{ label: 'Meldungen', data: dayData, backgroundColor: '#006959', borderRadius: 10 }]
+                },
+                options: { ...commonOptions, plugins: { legend: { display: false } } }
+            });
+
+            // 🕒 Uhrzeit & Dauer
+            charts.hours = new Chart(document.getElementById('hourChart'), {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => i + ':00'),
+                    datasets: [
+                        { label: 'Meldungen', data: hourData, borderColor: '#006959', backgroundColor: 'rgba(0, 105, 89, 0.1)', fill: true, tension: 0.4, yAxisID: 'y' },
+                        { label: '∅ Dauer (Min)', data: durationData, borderColor: '#F4B827', borderDash: [5, 5], fill: false, tension: 0.4, yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    ...commonOptions,
+                    scales: {
+                        y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Anzahl' } },
+                        y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Minuten' } }
+                    }
+                }
+            });
+
+            // 📦 Material
+            charts.types = new Chart(document.getElementById('typeChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(typeData),
+                    datasets: [{ data: Object.values(typeData), backgroundColor: ['#006959', '#F4B827', '#10b981', '#ef4444'] }]
+                },
+                options: { ...commonOptions, plugins: { legend: { display: true, position: 'bottom' } } }
+            });
+        }
+
+        initStats();
+    </script>
+</body>
+</html>
