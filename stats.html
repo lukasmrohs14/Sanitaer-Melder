@@ -42,6 +42,11 @@
                     <option value="Handtücher">🖐️ Handtücher</option>
                     <option value="Defekt">🛠️ Defekt</option>
                 </select>
+                
+                <button onclick="exportToCSV()" class="bg-firma-green text-white px-5 py-2 rounded-xl font-bold text-[10px] uppercase hover:opacity-90 transition-all shadow-md flex items-center gap-2">
+                    <span>📥</span> Export
+                </button>
+
                 <a href="admin.html" class="bg-gray-800 text-white px-5 py-2 rounded-xl font-bold text-[10px] uppercase hover:bg-black transition-all shadow-md">Zurück</a>
             </div>
         </div>
@@ -79,7 +84,7 @@
                 <div class="max-w-[200px] mx-auto"><canvas id="typeChart"></canvas></div>
             </div>
             <div class="bg-white p-6 rounded-[2.5rem] shadow-lg flex flex-col">
-                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">📝 Letzte Details</h2>
+                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">📝 Letzte Details zum Filter</h2>
                 <div id="recent-list" class="space-y-3 custom-scroll overflow-y-auto max-h-[220px] pr-2 flex-grow">
                     <p class="text-gray-400 text-xs italic">Lade Daten...</p>
                 </div>
@@ -93,6 +98,7 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let charts = {}; 
+        window.lastFilteredData = [];
 
         async function initStats() {
             const daysFilter = document.getElementById('time-filter').value;
@@ -133,8 +139,7 @@
                     
                     if (m.status === 'erledigt') {
                         done++;
-                        // Korrektur: Nutzt jetzt die korrekte Spalte erledigt_am
-                        if (m.erledigt_am) { 
+                        if (m.erledigt_am) { // Nutzt erledigt_am aus deiner DB
                             const duration = (new Date(m.erledigt_am) - date) / (1000 * 60);
                             if (duration > 0) {
                                 hourDurations[hour] += duration;
@@ -145,6 +150,8 @@
                     filteredData.push({...m, displayType: cleanType});
                 }
             });
+
+            window.lastFilteredData = filteredData;
 
             const avgDurations = hourDurations.map((total, i) => hourDoneCount[i] > 0 ? Math.round(total / hourDoneCount[i]) : 0);
             document.getElementById('stat-filter-label').innerText = typeFilter === 'all' ? "Gesamt" : typeFilter;
@@ -170,7 +177,7 @@
             list.innerHTML = recentData.map(m => `
                 <div class="bg-gray-50 p-3 rounded-2xl border-l-4 border-firma-yellow">
                     <div class="flex justify-between items-start mb-1">
-                        <span class="text-[10px] font-black text-firma-green uppercase">${m.typ}</span>
+                        <span class="text-[10px] font-black text-firma-green uppercase">${m.displayType}</span>
                         <span class="text-[9px] text-gray-400">${new Date(m.created_at).toLocaleDateString('de-DE')}</span>
                     </div>
                     <p class="text-[11px] text-gray-600 italic">"${m.nachricht || 'Kein Kommentar'}"</p>
@@ -182,7 +189,6 @@
             const commonOptions = { responsive: true, maintainAspectRatio: false };
             Object.values(charts).forEach(c => c.destroy());
 
-            // 📅 Wochentage
             charts.days = new Chart(document.getElementById('weekdayChart'), {
                 type: 'bar',
                 data: {
@@ -192,7 +198,6 @@
                 options: { ...commonOptions, plugins: { legend: { display: false } } }
             });
 
-            // 🕒 Uhrzeit & Dauer
             charts.hours = new Chart(document.getElementById('hourChart'), {
                 type: 'line',
                 data: {
@@ -205,21 +210,12 @@
                 options: {
                     ...commonOptions,
                     scales: {
-                        y: { type: 'linear', display: true, position: 'left', beginAtZero: true, title: { display: true, text: 'Anzahl' } },
-                        y1: { 
-                            type: 'linear', 
-                            display: true, 
-                            position: 'right', 
-                            beginAtZero: true, // Fix: Startet bei 0
-                            suggestedMax: 30,  // Fix: Schöne Skalierung
-                            grid: { drawOnChartArea: false }, 
-                            title: { display: true, text: 'Minuten' } 
-                        }
+                        y: { type: 'linear', display: true, position: 'left', beginAtZero: true },
+                        y1: { type: 'linear', display: true, position: 'right', beginAtZero: true, suggestedMax: 60, grid: { drawOnChartArea: false } }
                     }
                 }
             });
 
-            // 📦 Material
             charts.types = new Chart(document.getElementById('typeChart'), {
                 type: 'doughnut',
                 data: {
@@ -230,8 +226,24 @@
             });
         }
 
+        function exportToCSV() {
+            const data = window.lastFilteredData;
+            if (!data || data.length === 0) { alert("Keine Daten!"); return; }
+            const headers = ["Datum", "Uhrzeit", "Typ", "Nachricht", "Status", "Dauer(Min)"];
+            const csvRows = [headers.join(";")];
+            data.forEach(m => {
+                const d = new Date(m.created_at);
+                const dur = m.erledigt_am ? Math.round((new Date(m.erledigt_am) - d) / 60000) : "";
+                csvRows.push([d.toLocaleDateString(), d.toLocaleTimeString(), m.typ, `"${m.nachricht || ''}"`, m.status, dur].join(";"));
+            });
+            const blob = new Blob([csvRows.join("\n")], { type: 'text/csv' });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `Analyse_Voigt_${new Date().toLocaleDateString()}.csv`;
+            a.click();
+        }
+
         initStats();
     </script>
 </body>
-</html>
 </html>
