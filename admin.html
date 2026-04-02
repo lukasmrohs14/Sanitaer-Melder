@@ -22,15 +22,14 @@
     <div id="login-section" class="max-w-md mx-auto mt-20 p-8 bg-white rounded-[2.5rem] shadow-2xl text-center border border-gray-100 relative overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-1.5 bg-firma-yellow"></div>
         <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" class="h-10 mx-auto mb-6 mt-2">
-        <input type="password" id="pin" placeholder="PIN" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-center text-3xl outline-none focus:border-firma-yellow mb-4 shadow-inner">
+        <input type="password" id="pin" placeholder="PIN" 
+               class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-center text-3xl outline-none focus:border-firma-yellow mb-4 shadow-inner">
         <button onclick="checkPin()" class="w-full bg-firma-yellow text-white p-4 rounded-2xl font-black uppercase shadow-lg active:scale-95 transition-all">Einloggen</button>
     </div>
 
     <div id="admin-content" class="hidden max-w-4xl mx-auto p-4 space-y-8">
-        
         <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-6 rounded-[2rem] shadow-sm relative overflow-hidden border border-gray-100">
             <div class="absolute top-0 left-0 w-full h-1.5 bg-firma-yellow"></div>
-            
             <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" class="h-8 mt-2">
             <select id="admin-name-select" class="bg-gray-50 border-none rounded-xl p-3 font-bold text-firma-green uppercase text-xs outline-none shadow-inner">
                 <option value="Felix">👤 Felix</option>
@@ -44,38 +43,40 @@
         </div>
 
         <section>
-            <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-2">1. Standort-Radar</h2>
-            <div id="radar-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                </div>
+            <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-2 text-center md:text-left">1. Standort-Radar</h2>
+            <div id="radar-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
         </section>
 
         <section>
-            <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-2">2. Themen-Filter</h2>
-            <div id="type-filter" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                <button onclick="setFilter('all')" class="filter-btn active whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent hover:border-firma-yellow/20">Alle</button>
-                <button onclick="setFilter('Seife')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent hover:border-firma-yellow/20">🧼 Seife</button>
-                <button onclick="setFilter('Klopapier')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent hover:border-firma-yellow/20">🧻 Klopapier</button>
-                <button onclick="setFilter('Handtücher')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent hover:border-firma-yellow/20">🖐️ Handtücher</button>
+            <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-2 text-center md:text-left">2. Themen-Filter</h2>
+            <div id="type-filter" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar justify-start md:justify-center">
+                <button onclick="setFilter('all')" class="filter-btn active whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent">Alle</button>
+                <button onclick="setFilter('Seife')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent">🧼 Seife</button>
+                <button onclick="setFilter('Klopapier')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent">🧻 Klopapier</button>
+                <button onclick="setFilter('Handtücher')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent">🖐️ Handtücher</button>
             </div>
         </section>
 
         <section>
-            <h2 id="list-title" class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-2">3. Aufgaben</h2>
-            <div id="liste" class="space-y-3">
-                </div>
+            <h2 id="list-title" class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-2 text-center md:text-left">3. Aufgaben</h2>
+            <div id="liste" class="space-y-3"></div>
         </section>
     </div>
 
     <script>
         const SUPABASE_URL = 'https://khptivsvjngoicpknecj.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA9MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Enter-Taste für Login aktivieren
+        document.getElementById('pin').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkPin();
+        });
 
         let allMeldungen = [];
         let currentFilterType = 'all';
         let currentFilterLocation = 'all';
 
-        // PIN-Prüfung beim Login
         async function checkPin() {
             const eingabe = document.getElementById('pin').value;
             try {
@@ -90,22 +91,17 @@
                     alert("Falsche PIN!");
                     document.getElementById('pin').value = '';
                 }
-            } catch (err) { alert("Fehler beim Login!"); }
+            } catch (err) { alert("Login-Fehler: Verbindung fehlgeschlagen."); }
         }
 
-        // Daten laden & Radar/Liste aktualisieren
         async function loadData() {
-            try {
-                const { data, error } = await _supabase.from('meldungen').select('*').eq('status', 'offen').order('created_at', { ascending: true });
-                if (error) throw error;
-                allMeldungen = data || [];
-                renderRadar();
-                renderFilterButtons();
-                renderList();
-            } catch (err) { console.error("Fehler beim Laden:", err); }
+            const { data } = await _supabase.from('meldungen').select('*').eq('status', 'offen').order('created_at', { ascending: true });
+            allMeldungen = data || [];
+            renderRadar();
+            renderList();
+            updateFilterUI();
         }
 
-        // Standort-Radar rendern
         function renderRadar() {
             const locations = ['LZW', 'HVS', 'LZO', 'LZS']; 
             const grid = document.getElementById('radar-grid');
@@ -120,27 +116,25 @@
                     <button onclick="setLocationFilter('${loc}')" class="p-5 rounded-[2rem] border-2 ${activeStyle} transition-all relative flex flex-col items-center">
                         ${count > 0 ? `<span class="absolute top-4 right-4 w-3 h-3 bg-red-500 rounded-full indicator-dot shadow-[0_0_10px_rgba(239,68,68,0.5)]"></span>` : ''}
                         <span class="text-xs font-black text-firma-green uppercase tracking-wider">${loc}</span>
-                        <span class="text-[9px] font-bold text-gray-400 mt-1 uppercase whitespace-nowrap">${count} Offen</span>
+                        <span class="text-[9px] font-bold text-gray-400 mt-1 uppercase">${count} Offen</span>
                     </button>
                 `;
             });
         }
 
-        // Filter für Themen rendern & aktive Klasse setzen
-        function renderFilterButtons() {
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                const type = btn.innerText.split(' ').pop();
-                const isActive = (currentFilterType === 'Alle' && type === 'Alle') || (currentFilterType === type);
-                
-                btn.classList.toggle('border-firma-yellow', isActive);
-                btn.classList.toggle('text-firma-green', isActive);
-            });
+        function setFilter(type) {
+            currentFilterType = type;
+            renderList();
+            updateFilterUI();
         }
 
-        function setFilter(type) {
-            currentFilterType = type === 'all' ? 'Alle' : type;
-            renderFilterButtons();
-            renderList();
+        function updateFilterUI() {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                const isSelected = (currentFilterType === 'all' && btn.innerText.includes('Alle')) || 
+                                   (btn.innerText.includes(currentFilterType) && currentFilterType !== 'all');
+                btn.classList.toggle('border-firma-yellow', isSelected);
+                btn.classList.toggle('text-firma-green', isSelected);
+            });
         }
 
         function setLocationFilter(loc) {
@@ -149,12 +143,11 @@
             renderList();
         }
 
-        // Aufgaben-Liste rendern basierend auf Filtern
         function renderList() {
             const liste = document.getElementById('liste');
             let filtered = allMeldungen;
 
-            if (currentFilterType !== 'Alle' && currentFilterType !== 'all') filtered = filtered.filter(m => m.typ === currentFilterType);
+            if (currentFilterType !== 'all') filtered = filtered.filter(m => m.typ === currentFilterType);
             if (currentFilterLocation !== 'all') filtered = filtered.filter(m => m.standort === currentFilterLocation);
 
             liste.innerHTML = '';
@@ -165,25 +158,20 @@
 
             filtered.forEach(m => {
                 const timeDiff = Math.floor((new Date() - new Date(m.created_at)) / 60000);
-                const isUrgent = timeDiff > 20; // Rot wenn > 20 Min
+                const isUrgent = timeDiff > 20;
 
-                let icon = '📋';
-                const t = (m.typ || "").toLowerCase();
-                if (t.includes("papier")) icon = '🧻';
-                else if (t.includes("seife")) icon = '🧼';
-                else if (t.includes("handtuch")) icon = '🖐️';
+                let icon = (m.typ || "").toLowerCase().includes("papier") ? '🧻' : 
+                           (m.typ || "").toLowerCase().includes("seife") ? '🧼' : 
+                           (m.typ || "").toLowerCase().includes("handtuch") ? '🖐️' : '📋';
 
                 liste.innerHTML += `
                     <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 ${isUrgent ? 'border-red-500' : 'border-firma-green'} flex items-center justify-between gap-4 fade-in">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 mb-1.5">
-                                <span class="bg-gray-100 text-gray-500 text-[8px] px-2.5 py-1 rounded font-black uppercase tracking-wider">${m.standort} | ${m.etage}</span>
-                                <span class="text-[8px] ${isUrgent ? 'text-red-500 font-bold' : 'text-gray-300'} font-bold uppercase whitespace-nowrap">${timeDiff} Min</span>
+                                <span class="bg-gray-100 text-gray-500 text-[8px] px-2.5 py-1 rounded font-black uppercase">${m.standort} | ${m.etage}</span>
+                                <span class="text-[8px] ${isUrgent ? 'text-red-500 font-bold' : 'text-gray-300'} font-bold uppercase">${timeDiff} Min</span>
                             </div>
-                            <h3 class="font-black text-gray-700 uppercase text-xs flex items-center gap-2">
-                                <span class="text-base">${icon}</span> ${m.typ}
-                            </h3>
-                            ${m.nachricht ? `<p class="text-[10px] text-gray-400 italic mt-1 bg-gray-50 p-2 rounded-lg border border-gray-100">"${m.nachricht}"</p>` : ''}
+                            <h3 class="font-black text-gray-700 uppercase text-xs flex items-center gap-2">${icon} ${m.typ}</h3>
                         </div>
                         <button onclick="erledigen('${m.id}')" class="bg-firma-yellow text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-md active:scale-90 transition-all text-sm">✓</button>
                     </div>
@@ -191,24 +179,17 @@
             });
         }
 
-        // Aufgabe als erledigt markieren
         async function erledigen(id) {
             const name = document.getElementById('admin-name-select').value;
-            const { error } = await _supabase.from('meldungen').update({ 
-                status: 'erledigt', 
-                erledigt_von: name, 
-                erledigt_am: new Date().toISOString() 
+            await _supabase.from('meldungen').update({ 
+                status: 'erledigt', erledigt_von: name, erledigt_am: new Date().toISOString() 
             }).eq('id', id);
-            
-            if (error) alert("Fehler: " + error.message);
-            else loadData();
+            loadData();
         }
 
-        // Realtime Updates & Refresh
         function initRealtime() {
             _supabase.channel('admin-refresh').on('postgres_changes', { event: '*', schema: 'public', table: 'meldungen' }, () => loadData()).subscribe();
         }
-        setInterval(() => { if (!document.getElementById('admin-content').classList.contains('hidden')) loadData(); }, 30000);
     </script>
 </body>
 </html>
