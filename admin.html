@@ -30,7 +30,7 @@
 
         <div id="login-section" class="p-8 space-y-5 fade-in">
             <p class="text-center text-gray-400 font-black uppercase text-[10px] tracking-[0.2em]">Autorisierung erforderlich</p>
-            <input type="password" id="pin" placeholder="PIN eingeben" 
+            <input type="password" id="pin" placeholder="PIN" 
                 class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-center text-3xl outline-none focus:border-firma-yellow transition-all shadow-inner placeholder:text-gray-300">
             <button onclick="checkPin()" 
                 class="w-full bg-firma-yellow text-white p-4 rounded-2xl font-black uppercase shadow-lg active:scale-[0.97] transition-all tracking-wider text-sm">
@@ -40,27 +40,21 @@
 
         <div id="admin-content" class="hidden p-6 space-y-6 fade-in">
             <div class="mt-2 pt-4 border-t border-gray-100 text-center">
-                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Aktuelle Reinigungskraft</label>
-                <div class="relative inline-block w-full">
-                    <select id="admin-name-select" 
-                        class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold text-firma-green outline-none focus:border-firma-yellow transition-all cursor-pointer shadow-inner appearance-none text-center uppercase tracking-wider">
-                        <option value="Felix">👤 Felix</option>
-                        <option value="Birgit">👤 Birgit</option>
-                        <option value="Gast-Reinigung">🛠️ Gast-Reinigung</option>
-                    </select>
-                </div>
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Reinigung durch:</label>
+                <select id="admin-name-select" 
+                    class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold text-firma-green outline-none focus:border-firma-yellow transition-all cursor-pointer shadow-inner appearance-none text-center uppercase tracking-wider">
+                    <option value="Felix">👤 Felix</option>
+                    <option value="Birgit">👤 Birgit</option>
+                    <option value="Gast-Reinigung">🛠️ Gast-Reinigung</option>
+                </select>
             </div>
 
             <div class="space-y-4">
                 <div class="flex justify-between items-center px-1">
                     <h2 class="text-firma-green font-black uppercase tracking-tight text-sm text-left">Offene Aufgaben</h2>
                     <div class="flex gap-2">
-                        <a href="stats.html" class="text-[10px] bg-firma-green text-white px-3 py-1.5 rounded-full font-bold hover:bg-opacity-90 uppercase transition-colors flex items-center gap-1">
-                            📊 Stats
-                        </a>
-                        <button onclick="loadMeldungen()" class="text-[10px] bg-gray-100 text-gray-500 px-3 py-1.5 rounded-full font-bold hover:bg-gray-200 uppercase transition-colors flex items-center gap-1">
-                            🔄 Refresh
-                        </button>
+                        <a href="stats.html" class="text-[10px] bg-firma-green text-white px-3 py-1.5 rounded-full font-bold hover:bg-opacity-90 uppercase transition-colors flex items-center gap-1">📊 Stats</a>
+                        <button onclick="loadMeldungen()" class="text-[10px] bg-gray-100 text-gray-500 px-3 py-1.5 rounded-full font-bold hover:bg-gray-200 uppercase transition-colors flex items-center gap-1">🔄</button>
                     </div>
                 </div>
                 <div id="liste" class="space-y-3">
@@ -75,127 +69,85 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Enter-Taste für PIN
-        document.getElementById('pin').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') checkPin();
-        });
+        document.getElementById('pin').addEventListener('keypress', (e) => { if (e.key === 'Enter') checkPin(); });
 
-        // PIN Prüfung via RPC
         async function checkPin() {
             const eingabe = document.getElementById('pin').value;
-            try {
-                const { data: isValid, error } = await _supabase.rpc('check_admin_pin', { input_pin: eingabe });
-                if (error) throw error;
-                if (isValid) {
-                    document.getElementById('login-section').classList.add('hidden');
-                    document.getElementById('admin-content').classList.remove('hidden');
-                    loadMeldungen();
-                    initRealtime();
-                } else {
-                    alert("Falsche PIN!");
-                    document.getElementById('pin').value = '';
-                }
-            } catch (err) {
-                console.error("Login-Fehler:", err);
-                alert("Verbindungsfehler.");
+            const { data: isValid, error } = await _supabase.rpc('check_admin_pin', { input_pin: eingabe });
+            if (isValid) {
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('admin-content').classList.remove('hidden');
+                loadMeldungen();
+                initRealtime();
+            } else {
+                alert("Falsche PIN!");
+                document.getElementById('pin').value = '';
             }
         }
 
-        // Echtzeit-Updates für neue Meldungen
         function initRealtime() {
-            _supabase
-                .channel('admin-updates')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'meldungen' }, () => {
-                    loadMeldungen();
-                })
-                .subscribe();
+            _supabase.channel('admin-updates').on('postgres_changes', { event: '*', schema: 'public', table: 'meldungen' }, () => { loadMeldungen(); }).subscribe();
         }
 
-        // Aufgaben laden (nur Status 'offen')
         async function loadMeldungen() {
-            try {
-                const { data, error } = await _supabase
-                    .from('meldungen')
-                    .select('*')
-                    .eq('status', 'offen')
-                    .order('created_at', { ascending: false });
+            const { data, error } = await _supabase.from('meldungen').select('*').eq('status', 'offen').order('created_at', { ascending: false });
+            const liste = document.getElementById('liste');
+            liste.innerHTML = '';
 
-                if (error) throw error;
-                const liste = document.getElementById('liste');
-                liste.innerHTML = '';
+            if (data.length === 0) {
+                liste.innerHTML = `<div class="bg-gray-50 p-10 rounded-3xl border-2 border-dashed border-gray-200 text-center"><p class="text-gray-300 font-black uppercase text-[10px] tracking-widest">✨ Alles sauber!</p></div>`;
+                return;
+            }
 
-                if (data.length === 0) {
-                    liste.innerHTML = `<div class="bg-gray-50 p-10 rounded-3xl border-2 border-dashed border-gray-200 text-center">
-                        <p class="text-gray-300 font-black uppercase text-[10px] tracking-widest">✨ Alles erledigt!</p>
-                    </div>`;
-                    return;
-                }
+            data.forEach(m => {
+                const div = document.createElement('div');
+                div.className = "bg-white p-4 rounded-2xl shadow-md border-l-8 border-firma-green flex flex-col gap-3 transition-all hover:shadow-lg fade-in";
+                
+                let icon = '⚠️';
+                const t = (m.typ || "").toLowerCase();
+                if (t.includes("papier")) icon = '🧻';
+                else if (t.includes("seife")) icon = '🧼';
+                else if (t.includes("handtuch")) icon = '🖐️';
 
-                data.forEach(m => {
-                    const div = document.createElement('div');
-                    div.className = "bg-white p-5 rounded-2xl shadow-md border-l-8 border-firma-green flex justify-between items-center transition-all hover:shadow-lg fade-in";
-                    
-                    // Icon-Logik passend zur Statistik
-                    let icon = '⚠️';
-                    const rawType = (m.typ || "").toLowerCase();
-                    if (rawType.includes("papier")) icon = '🧻';
-                    else if (rawType.includes("seife")) icon = '🧼';
-                    else if (rawType.includes("handtuch") || rawType.includes("handtücher")) icon = '🖐️';
-                    else if (rawType.includes("defekt")) icon = '🛠️';
-
-                    // Foto-Handling
-                    let fotoUrl = m.foto_url;
-                    if (!fotoUrl && m.nachricht && m.nachricht.includes('[FOTO: ')) {
-                        fotoUrl = m.nachricht.split('[FOTO: ')[1].split(']')[0];
-                    }
-
-                    const fotoHtml = fotoUrl ? `
-                        <a href="${fotoUrl}" target="_blank" class="mt-2 block">
-                            <img src="${fotoUrl}" class="h-16 w-full object-cover rounded-xl border border-gray-100 shadow-sm">
-                        </a>` : '';
-                    
-                    div.innerHTML = `
-                        <div class="flex-1 pr-4 text-left">
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="bg-firma-green text-white text-[9px] px-2 py-0.5 rounded font-black uppercase">${m.standort || '???'}</span>
+                                <span class="bg-firma-yellow text-white text-[9px] px-2 py-0.5 rounded font-black uppercase">${m.etage || '???'}</span>
+                            </div>
                             <p class="font-black text-firma-green uppercase text-xs flex items-center gap-2">
                                 <span class="text-lg">${icon}</span> ${m.typ}
                             </p>
-                            <p class="text-[9px] text-gray-400 font-bold mb-1 uppercase tracking-tighter">
-                                ${new Date(m.created_at).toLocaleString('de-DE')}
-                            </p>
-                            ${m.nachricht ? `<p class="text-[11px] text-gray-600 leading-tight italic">"${m.nachricht.replace(/\[FOTO: .*?\]/, '')}"</p>` : ''}
-                            ${fotoHtml}
                         </div>
-                        <button onclick="erledigen('${m.id}')" 
-                            class="bg-firma-yellow text-white px-4 py-3 rounded-xl font-black text-[10px] shadow-md hover:brightness-95 active:scale-90 transition-all uppercase whitespace-nowrap">
-                            Erledigt
-                        </button>`;
-                    liste.appendChild(div);
-                });
-            } catch (err) { console.error("Ladefehler:", err); }
+                        <p class="text-[9px] text-gray-300 font-bold uppercase whitespace-nowrap">${new Date(m.created_at).toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'})} Uhr</p>
+                    </div>
+
+                    ${m.nachricht ? `<p class="text-[11px] text-gray-600 italic bg-gray-50 p-2 rounded-lg border border-gray-100">"${m.nachricht}"</p>` : ''}
+                    
+                    ${m.foto_url ? `<a href="${m.foto_url}" target="_blank"><img src="${m.foto_url}" class="h-24 w-full object-cover rounded-xl border border-gray-100 shadow-sm"></a>` : ''}
+
+                    <button onclick="erledigen('${m.id}')" 
+                        class="w-full bg-firma-yellow text-white py-3 rounded-xl font-black text-[10px] shadow-md active:scale-95 transition-all uppercase">
+                        Als Erledigt markieren
+                    </button>`;
+                liste.appendChild(div);
+            });
         }
 
-        // Status-Update mit Zeitstempel für Statistik-Dauer
         async function erledigen(id) {
             const name = document.getElementById('admin-name-select').value;
-            try {
-                const { error } = await _supabase
-                    .from('meldungen')
-                    .update({ 
-                        status: 'erledigt', 
-                        erledigt_von: name, 
-                        erledigt_am: new Date().toISOString() // WICHTIG: Erzeugt die Daten für die gelbe Linie
-                    })
-                    .eq('id', id);
-                
-                if (error) throw error;
-                loadMeldungen();
-            } catch (err) { alert("Fehler: " + err.message); }
+            const { error } = await _supabase.from('meldungen').update({ 
+                status: 'erledigt', 
+                erledigt_von: name, 
+                erledigt_am: new Date().toISOString() 
+            }).eq('id', id);
+            
+            if (error) alert("Fehler: " + error.message);
+            else loadMeldungen();
         }
 
-        // Backup-Refresh alle 30 Sek
-        setInterval(() => {
-            if (!document.getElementById('admin-content').classList.contains('hidden')) loadMeldungen();
-        }, 30000);
+        setInterval(() => { if (!document.getElementById('admin-content').classList.contains('hidden')) loadMeldungen(); }, 30000);
     </script>
 </body>
 </html>
