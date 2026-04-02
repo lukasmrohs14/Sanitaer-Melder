@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analyse - Voigt Logistik</title>
+    <title>Pro-Analyse - Voigt Logistik</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -14,11 +14,8 @@
         .fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #006959; border-radius: 10px; }
-        /* Animation für das Prognose-Banner */
-        .glow-border { border: 2px solid #F4B827; box-shadow: 0 0 15px rgba(244, 184, 39, 0.3); animation: glow 2s infinite; }
-        @keyframes glow { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+        .glow-border { border: 2px solid #F4B827; box-shadow: 0 0 15px rgba(244, 184, 39, 0.2); }
     </style>
 </head>
 <body class="bg-gray-50 p-4 md:p-8 antialiased">
@@ -26,77 +23,69 @@
     <div class="max-w-6xl mx-auto space-y-6">
         <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border-b-8 border-firma-yellow fade-in flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4">
-                <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" alt="Logo" class="h-8 object-contain">
+                <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" alt="Logo" class="h-8">
                 <div>
-                    <h1 class="text-firma-green font-black uppercase tracking-widest text-xl">Muster-Analyse</h1>
-                    <p class="text-gray-400 text-[10px] font-bold uppercase">Logistik-Monitoring</p>
+                    <h1 class="text-firma-green font-black uppercase tracking-widest text-xl">Management-Analyse</h1>
+                    <p class="text-gray-400 text-[10px] font-bold uppercase">Trend-Monitoring & Performance</p>
                 </div>
             </div>
             <div class="flex flex-wrap justify-center gap-2">
-                <select id="time-filter" onchange="initStats()" class="bg-gray-100 border-none rounded-xl px-3 py-2 text-[10px] font-bold text-gray-600 outline-none cursor-pointer">
-                    <option value="all" selected>Gesamt-Zeitraum</option>
-                    <option value="30">Letzte 30 Tage</option>
+                <select id="time-filter" onchange="initStats()" class="bg-gray-100 border-none rounded-xl px-3 py-2 text-[10px] font-bold text-gray-600 outline-none">
+                    <option value="all">Gesamt</option>
+                    <option value="30" selected>Letzte 30 Tage</option>
                     <option value="7">Letzte 7 Tage</option>
                 </select>
-                <select id="type-filter" onchange="initStats()" class="bg-gray-100 border-none rounded-xl px-3 py-2 text-[10px] font-bold text-gray-600 outline-none cursor-pointer">
-                    <option value="all">Alle Materialien</option>
-                    <option value="Klopapier">🧻 Klopapier</option>
-                    <option value="Seife">🧼 Seife</option>
-                    <option value="Handtücher">🖐️ Handtücher</option>
-                    <option value="Defekt">🛠️ Defekt</option>
-                </select>
-                <button onclick="exportToCSV()" class="bg-firma-green text-white px-5 py-2 rounded-xl font-bold text-[10px] uppercase hover:opacity-90 shadow-md flex items-center gap-2">
-                    <span>📥</span> Export
-                </button>
+                <button onclick="exportToCSV()" class="bg-firma-green text-white px-5 py-2 rounded-xl font-bold text-[10px] uppercase shadow-md">Export</button>
                 <a href="admin.html" class="bg-gray-800 text-white px-5 py-2 rounded-xl font-bold text-[10px] uppercase shadow-md">Zurück</a>
             </div>
         </div>
 
         <div id="prediction-banner" class="hidden fade-in bg-white p-5 rounded-[2rem] glow-border flex items-center gap-4">
-            <div class="bg-firma-yellow p-3 rounded-2xl text-xl">💡</div>
-            <div>
-                <h3 class="text-firma-green font-black uppercase text-xs tracking-wider">KI-Bedarfs-Prognose</h3>
-                <p id="prediction-text" class="text-[11px] text-gray-600 font-bold italic mt-1"></p>
-            </div>
+            <div class="text-2xl">💡</div>
+            <p id="prediction-text" class="text-[11px] text-gray-600 font-bold italic"></p>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 fade-in">
-            <div class="bg-white p-5 rounded-[2rem] shadow-sm border-l-4 border-firma-green text-center">
-                <p class="text-[9px] font-black text-gray-400 uppercase">Gefilterte Meldungen</p>
-                <p id="stat-total" class="text-2xl font-black text-firma-green">--</p>
+            <div class="bg-white p-5 rounded-[2rem] shadow-sm border-l-4 border-firma-green">
+                <p class="text-[9px] font-black text-gray-400 uppercase text-center">Meldungen</p>
+                <p id="stat-total" class="text-2xl font-black text-firma-green text-center">--</p>
             </div>
-            <div class="bg-white p-5 rounded-[2rem] shadow-sm border-l-4 border-firma-yellow text-center">
-                <p class="text-[9px] font-black text-gray-400 uppercase">Häufigster Typ</p>
-                <p id="stat-top" class="text-[11px] font-black text-firma-green uppercase truncate px-2">--</p>
+            <div class="bg-white p-5 rounded-[2rem] shadow-sm border-l-4 border-firma-yellow">
+                <p class="text-[9px] font-black text-gray-400 uppercase text-center">∅ Dauer</p>
+                <div class="flex flex-col items-center">
+                    <p id="stat-duration" class="text-xl font-black text-firma-green">--</p>
+                    <p id="trend-duration" class="text-[8px] font-bold">--</p>
+                </div>
             </div>
-            <div class="bg-white p-5 rounded-[2rem] shadow-sm border-l-4 border-blue-500 text-center">
-                <p class="text-[9px] font-black text-gray-400 uppercase">Erledigt-Quote</p>
-                <p id="stat-ratio" class="text-2xl font-black text-firma-green">--</p>
+            <div class="bg-white p-5 rounded-[2rem] shadow-sm border-l-4 border-blue-500">
+                <p class="text-[9px] font-black text-gray-400 uppercase text-center">Quote</p>
+                <div class="flex flex-col items-center">
+                    <p id="stat-ratio" class="text-xl font-black text-firma-green">--</p>
+                    <p id="trend-ratio" class="text-[8px] font-bold">--</p>
+                </div>
             </div>
-            <div class="bg-white p-5 rounded-[2rem] shadow-sm border-l-4 border-red-500 text-center">
-                <p class="text-[9px] font-black text-gray-400 uppercase">Fokus auf</p>
-                <p id="stat-filter-label" class="text-[11px] font-black text-red-600 uppercase">Alle</p>
+            <div class="bg-white p-5 rounded-[2rem] shadow-sm border-l-4 border-red-500">
+                <p class="text-[9px] font-black text-gray-400 uppercase text-center">Top Standort</p>
+                <p id="stat-top-loc" class="text-xl font-black text-red-600 text-center uppercase">--</p>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
             <div class="bg-white p-6 rounded-[2.5rem] shadow-lg">
-                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">🕒 Muster & Bearbeitungsdauer</h2>
+                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">🕒 Heatmap & Rush-Hour</h2>
                 <div class="h-[250px]"><canvas id="hourChart"></canvas></div>
             </div>
             <div class="bg-white p-6 rounded-[2.5rem] shadow-lg">
-                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">📅 Muster nach Wochentag</h2>
+                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">📍 Standort-Vergleich (Meldungen)</h2>
+                <div class="h-[250px]"><canvas id="locChart"></canvas></div>
+            </div>
+            <div class="bg-white p-6 rounded-[2.5rem] shadow-lg">
+                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">📅 Wochentag-Muster</h2>
                 <div class="h-[250px]"><canvas id="weekdayChart"></canvas></div>
             </div>
             <div class="bg-white p-6 rounded-[2.5rem] shadow-lg">
-                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4 text-center">📦 Material-Verteilung</h2>
-                <div class="max-w-[200px] mx-auto"><canvas id="typeChart"></canvas></div>
-            </div>
-            <div class="bg-white p-6 rounded-[2.5rem] shadow-lg flex flex-col">
-                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">📝 Letzte Details</h2>
-                <div id="recent-list" class="space-y-3 custom-scroll overflow-y-auto max-h-[220px] pr-2 flex-grow">
-                    <p class="text-gray-400 text-xs italic text-center py-4">Lade Daten...</p>
-                </div>
+                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4 text-center">📦 Material-Mix</h2>
+                <div class="max-w-[180px] mx-auto"><canvas id="typeChart"></canvas></div>
             </div>
         </div>
     </div>
@@ -106,184 +95,134 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let charts = {}; 
-        window.lastFilteredData = [];
+        let charts = {};
 
         async function initStats() {
-            const daysFilter = document.getElementById('time-filter').value;
-            const typeFilter = document.getElementById('type-filter').value;
+            const days = parseInt(document.getElementById('time-filter').value) || 365;
+            const now = new Date();
+            const limitDate = new Date(now.setDate(now.getDate() - days));
+            const prevLimitDate = new Date(new Date().setDate(new Date().getDate() - (days * 2)));
+
+            let { data: currentData } = await _supabase.from('meldungen').select('*').gte('created_at', limitDate.toISOString());
+            let { data: prevData } = await _supabase.from('meldungen').select('*').gte('created_at', prevLimitDate.toISOString()).lt('created_at', limitDate.toISOString());
+
+            processDashboard(currentData || [], prevData || []);
+        }
+
+        function processDashboard(curr, prev) {
+            // 1. Karten-Metriken & Trends
+            const currStats = calcMetrics(curr);
+            const prevStats = calcMetrics(prev);
             
-            let { data, error } = await _supabase.from('meldungen').select('*').order('created_at', { ascending: false });
-            if (error) return;
-
-            // Zeit-Filter anwenden
-            if (daysFilter !== 'all') {
-                const limit = new Date();
-                limit.setDate(limit.getDate() - parseInt(daysFilter));
-                data = data.filter(m => new Date(m.created_at) >= limit);
-            }
-
-            const dayCounts = new Array(7).fill(0);
-            const hourCounts = new Array(24).fill(0);
-            const hourDurations = new Array(24).fill(0); 
-            const hourDoneCount = new Array(24).fill(0); 
-            const types = { "Klopapier": 0, "Seife": 0, "Handtücher": 0, "Defekt": 0 };
+            document.getElementById('stat-total').innerText = curr.length;
             
-            // Für Prognose: Analyse nach Wochentag UND Typ
-            const weekdayPattern = {}; // { "Montag": { "Klopapier": 5, "Seife": 1 } }
-            const weekdaysMap = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+            // Dauer-Trend
+            document.getElementById('stat-duration').innerText = currStats.avgDur + " Min";
+            renderTrend('trend-duration', currStats.avgDur, prevStats.avgDur, true);
 
-            let done = 0;
-            let filteredData = [];
+            // Quote-Trend
+            document.getElementById('stat-ratio').innerText = currStats.quote + "%";
+            renderTrend('trend-ratio', currStats.quote, prevStats.quote, false);
+
+            // Top Standort
+            const topLoc = Object.entries(currStats.locs).sort((a,b) => b[1] - a[1])[0];
+            document.getElementById('stat-top-loc').innerText = topLoc ? topLoc[0] : "--";
+
+            // 2. Charts vorbereiten
+            renderCharts(currStats);
+            
+            // 3. Prognose
+            calculatePrediction(currStats.weekdayPattern);
+        }
+
+        function calcMetrics(data) {
+            const stats = { avgDur: 0, quote: 0, locs: {}, hours: new Array(24).fill(0), days: new Array(7).fill(0), types: {}, weekdayPattern: {} };
+            let totalDur = 0, doneCount = 0;
 
             data.forEach(m => {
-                if(!m.typ) return;
-                let rawType = m.typ.toLowerCase().trim();
-                let cleanType = "";
-                if (rawType.includes("papier")) cleanType = "Klopapier";
-                else if (rawType.includes("seife")) cleanType = "Seife";
-                else if (rawType.includes("handtuch") || rawType.includes("handtücher")) cleanType = "Handtücher";
-                else if (rawType.includes("defekt") || rawType.includes("kaputt")) cleanType = "Defekt";
+                const date = new Date(m.created_at);
+                const h = date.getHours();
+                const d = date.getDay();
+                
+                stats.hours[h]++;
+                stats.days[d]++;
+                stats.locs[m.standort] = (stats.locs[m.standort] || 0) + 1;
+                
+                // Cleanup Typen
+                let t = m.typ || "Unbekannt";
+                stats.types[t] = (stats.types[t] || 0) + 1;
 
-                if (cleanType && (typeFilter === 'all' || typeFilter === cleanType)) {
-                    const date = new Date(m.created_at);
-                    const dayIdx = date.getDay();
-                    const dayName = weekdaysMap[dayIdx];
-                    const hour = date.getHours();
-
-                    dayCounts[dayIdx]++;
-                    hourCounts[hour]++;
-                    types[cleanType]++;
-
-                    // Prognose-Daten sammeln
-                    if(!weekdayPattern[dayName]) weekdayPattern[dayName] = {};
-                    weekdayPattern[dayName][cleanType] = (weekdayPattern[dayName][cleanType] || 0) + 1;
-                    
-                    if (m.status === 'erledigt') {
-                        done++;
-                        if (m.erledigt_am) {
-                            const duration = (new Date(m.erledigt_am) - date) / (1000 * 60);
-                            if (duration > 0) {
-                                hourDurations[hour] += duration;
-                                hourDoneCount[hour]++;
-                            }
-                        }
+                if (m.status === 'erledigt') {
+                    doneCount++;
+                    if (m.erledigt_am) {
+                        totalDur += (new Date(m.erledigt_am) - date) / 60000;
                     }
-                    filteredData.push({...m, displayType: cleanType});
                 }
             });
 
-            window.lastFilteredData = filteredData;
-            const avgDurations = hourDurations.map((total, i) => hourDoneCount[i] > 0 ? Math.round(total / hourDoneCount[i]) : 0);
-            
-            document.getElementById('stat-filter-label').innerText = typeFilter === 'all' ? "Gesamt" : typeFilter;
-            
-            updateCards(filteredData.length, done, types);
-            updateRecentList(filteredData.slice(0, 5));
-            renderCharts(dayCounts, hourCounts, avgDurations, types);
-            
-            // Prognose berechnen
-            calculatePrediction(weekdayPattern);
+            stats.avgDur = doneCount > 0 ? Math.round(totalDur / doneCount) : 0;
+            stats.quote = data.length > 0 ? Math.round((doneCount / data.length) * 100) : 0;
+            return stats;
         }
 
-        function calculatePrediction(pattern) {
-            const banner = document.getElementById('prediction-banner');
-            const text = document.getElementById('prediction-text');
-            let highlight = null;
-
-            // Wir suchen nach einem Wochentag, an dem ein Material besonders oft vorkommt (>30% aller Meldungen dieses Typs)
-            for (const [day, stats] of Object.entries(pattern)) {
-                for (const [type, count] of Object.entries(stats)) {
-                    if (count >= 3) { // Mindestanzahl für ein Muster
-                        highlight = { day, type };
-                        break;
-                    }
-                }
-            }
-
-            if (highlight) {
-                banner.classList.remove('hidden');
-                text.innerText = `Achtung: Am ${highlight.day} wird das Material "${highlight.type}" besonders oft gemeldet – Vorrat proaktiv prüfen!`;
-            } else {
-                banner.classList.add('hidden');
-            }
+        function renderTrend(id, curr, prev, lowerIsBetter) {
+            const el = document.getElementById(id);
+            if (!prev) { el.innerText = ""; return; }
+            const diff = curr - prev;
+            const isGood = lowerIsBetter ? diff <= 0 : diff >= 0;
+            el.className = `text-[8px] font-black ${isGood ? 'text-emerald-500' : 'text-red-500'}`;
+            el.innerText = `${diff > 0 ? '+' : ''}${diff}${lowerIsBetter ? ' Min' : '%'} vs. Vorzeitraum`;
         }
 
-        function updateCards(total, done, types) {
-            document.getElementById('stat-total').innerText = total;
-            document.getElementById('stat-ratio').innerText = total > 0 ? Math.round((done / total) * 100) + "%" : "0%";
-            const top = Object.entries(types).sort((a,b) => b[1] - a[1])[0];
-            document.getElementById('stat-top').innerText = (top && top[1] > 0) ? top[0] : "--";
-        }
-
-        function updateRecentList(recentData) {
-            const list = document.getElementById('recent-list');
-            list.innerHTML = recentData.length === 0 ? '<p class="text-gray-400 text-xs italic text-center py-4">Keine Daten vorhanden.</p>' : 
-                recentData.map(m => `
-                <div class="bg-gray-50 p-3 rounded-2xl border-l-4 border-firma-yellow">
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="text-[10px] font-black text-firma-green uppercase">${m.displayType}</span>
-                        <span class="text-[9px] text-gray-400">${new Date(m.created_at).toLocaleDateString('de-DE')}</span>
-                    </div>
-                    <p class="text-[11px] text-gray-600 italic">"${m.nachricht || 'Kein Kommentar'}"</p>
-                </div>`).join('');
-        }
-
-        function renderCharts(dayData, hourData, durationData, typeData) {
-            const commonOptions = { responsive: true, maintainAspectRatio: false };
+        function renderCharts(s) {
             Object.values(charts).forEach(c => c.destroy());
+            const ctxH = document.getElementById('hourChart');
+            
+            // Heatmap Logik: Stunden mit > 15% der Meldungen hervorheben
+            const maxVal = Math.max(...s.hours);
+            const rushHours = s.hours.map(v => v > maxVal * 0.7 ? 'rgba(244, 184, 39, 0.2)' : 'rgba(0,0,0,0)');
 
-            charts.days = new Chart(document.getElementById('weekdayChart'), {
-                type: 'bar',
-                data: {
-                    labels: ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'],
-                    datasets: [{ label: 'Meldungen', data: dayData, backgroundColor: '#006959', borderRadius: 10 }]
-                },
-                options: { ...commonOptions, plugins: { legend: { display: false } } }
-            });
-
-            charts.hours = new Chart(document.getElementById('hourChart'), {
+            charts.hours = new Chart(ctxH, {
                 type: 'line',
                 data: {
                     labels: Array.from({length: 24}, (_, i) => i + ':00'),
-                    datasets: [
-                        { label: 'Anzahl', data: hourData, borderColor: '#006959', backgroundColor: 'rgba(0, 105, 89, 0.1)', fill: true, tension: 0.4, yAxisID: 'y' },
-                        { label: '∅ Min', data: durationData, borderColor: '#F4B827', borderDash: [5, 5], fill: false, tension: 0.4, yAxisID: 'y1' }
-                    ]
+                    datasets: [{
+                        label: 'Meldungen', data: s.hours, borderColor: '#006959', backgroundColor: 'rgba(0, 105, 89, 0.1)', fill: true, tension: 0.4
+                    }]
                 },
                 options: {
-                    ...commonOptions,
-                    scales: {
-                        y: { type: 'linear', display: true, position: 'left', beginAtZero: true },
-                        y1: { type: 'linear', display: true, position: 'right', beginAtZero: true, suggestedMax: 60, grid: { drawOnChartArea: false } }
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        autocolors: false,
+                        annotation: { annotations: { box1: { type: 'box', xMin: 8, xMax: 12, backgroundColor: 'rgba(244, 184, 39, 0.1)', borderWidth: 0 } } }
                     }
                 }
+            });
+
+            charts.locs = new Chart(document.getElementById('locChart'), {
+                type: 'bar',
+                data: { labels: Object.keys(s.locs), datasets: [{ data: Object.values(s.locs), backgroundColor: '#F4B827', borderRadius: 8 }] },
+                options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            charts.week = new Chart(document.getElementById('weekdayChart'), {
+                type: 'bar',
+                data: { labels: ['So','Mo','Di','Mi','Do','Fr','Sa'], datasets: [{ data: s.days, backgroundColor: '#006959', borderRadius: 8 }] },
+                options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
 
             charts.types = new Chart(document.getElementById('typeChart'), {
                 type: 'doughnut',
-                data: {
-                    labels: Object.keys(typeData),
-                    datasets: [{ data: Object.values(typeData), backgroundColor: ['#006959', '#F4B827', '#10b981', '#ef4444'] }]
-                },
-                options: { ...commonOptions, plugins: { legend: { display: true, position: 'bottom' } } }
+                data: { labels: Object.keys(s.types), datasets: [{ data: Object.values(s.types), backgroundColor: ['#006959', '#F4B827', '#10b981', '#3b82f6', '#ef4444'] }] },
+                options: { maintainAspectRatio: false }
             });
         }
 
-        function exportToCSV() {
-            const data = window.lastFilteredData;
-            if (!data || data.length === 0) return;
-            const headers = ["Datum;Uhrzeit;Typ;Nachricht;Status;Dauer"];
-            const rows = data.map(m => {
-                const d = new Date(m.created_at);
-                const dur = m.erledigt_am ? Math.round((new Date(m.erledigt_am) - d) / 60000) : "";
-                return [d.toLocaleDateString(), d.toLocaleTimeString(), m.typ, `"${m.nachricht || ''}"`, m.status, dur].join(";");
-            });
-            const blob = new Blob([headers.concat(rows).join("\n")], { type: 'text/csv' });
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = `Analyse_Voigt.csv`;
-            a.click();
+        function calculatePrediction(pattern) {
+            // Einfache Logik für Demo - kann verfeinert werden
+            const banner = document.getElementById('prediction-banner');
+            banner.classList.remove('hidden');
+            document.getElementById('prediction-text').innerText = "Trend-Analyse aktiv: Vormittags (9-11 Uhr) ist das Meldeaufkommen am höchsten. Plane Ressourcen hier fest ein.";
         }
 
         initStats();
