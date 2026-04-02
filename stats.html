@@ -11,42 +11,45 @@
         .text-firma-green { color: #006959; }
         .bg-firma-green { background-color: #006959; }
         .bg-firma-yellow { background-color: #F4B827; }
-        .fade-in { animation: fadeIn 0.5s ease-out; }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="bg-gray-50 p-4 md:p-8">
+<body class="bg-gray-50 p-4 md:p-8 antialiased">
 
     <div class="max-w-6xl mx-auto space-y-6">
         
         <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border-b-8 border-firma-yellow fade-in flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-                <h1 class="text-firma-green font-black uppercase tracking-widest text-xl">Muster-Analyse</h1>
-                <p class="text-gray-400 text-[10px] font-bold uppercase">Strategische Auswertung</p>
+            <div class="flex items-center gap-4">
+                <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" alt="Logo" class="h-8 object-contain">
+                <div>
+                    <h1 class="text-firma-green font-black uppercase tracking-widest text-xl">Analyse-Tool</h1>
+                    <p class="text-gray-400 text-[10px] font-bold uppercase">Muster & Verbräuche</p>
+                </div>
             </div>
             
-            <div class="flex items-center gap-2">
-                <select id="time-filter" onchange="initStats()" class="bg-gray-100 border-none rounded-xl px-4 py-2 text-xs font-bold text-gray-600 outline-none focus:ring-2 focus:ring-firma-yellow">
+            <div class="flex items-center gap-3">
+                <select id="time-filter" onchange="initStats()" class="bg-gray-100 border-none rounded-xl px-4 py-2 text-xs font-bold text-gray-600 outline-none focus:ring-2 focus:ring-firma-yellow cursor-pointer">
                     <option value="7">Letzte 7 Tage</option>
                     <option value="30">Letzte 30 Tage</option>
                     <option value="all" selected>Gesamt-Historie</option>
                 </select>
-                <a href="admin.html" class="bg-gray-800 text-white px-4 py-2 rounded-xl font-bold text-xs uppercase hover:bg-black transition-all">Schließen</a>
+                <a href="admin.html" class="bg-gray-800 text-white px-5 py-2 rounded-xl font-bold text-xs uppercase hover:bg-black transition-all shadow-md">Zurück</a>
             </div>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 fade-in">
             <div class="bg-white p-5 rounded-[2rem] shadow-sm border-l-4 border-firma-green text-center">
                 <p class="text-[9px] font-black text-gray-400 uppercase">Meldungen</p>
-                <p id="stat-total" class="text-2xl font-black text-firma-green">0</p>
+                <p id="stat-total" class="text-2xl font-black text-firma-green">--</p>
             </div>
             <div class="bg-white p-5 rounded-[2rem] shadow-sm border-l-4 border-firma-yellow text-center">
                 <p class="text-[9px] font-black text-gray-400 uppercase">Top Problem</p>
                 <p id="stat-top" class="text-xs font-black text-firma-green uppercase truncate px-2">--</p>
             </div>
             <div class="bg-white p-5 rounded-[2rem] shadow-sm border-l-4 border-blue-500 text-center">
-                <p class="text-[9px] font-black text-gray-400 uppercase">Quote</p>
-                <p id="stat-ratio" class="text-2xl font-black text-firma-green">0%</p>
+                <p class="text-[9px] font-black text-gray-400 uppercase">Erledigt-Quote</p>
+                <p id="stat-ratio" class="text-2xl font-black text-firma-green">--</p>
             </div>
             <div class="bg-white p-5 rounded-[2rem] shadow-sm border-l-4 border-purple-500 text-center">
                 <p class="text-[9px] font-black text-gray-400 uppercase">Aktivster Admin</p>
@@ -57,9 +60,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
             
             <div class="bg-white p-6 rounded-[2.5rem] shadow-lg">
-                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4 flex items-center gap-2">
-                    🕒 Wann treten Probleme auf? (Uhrzeit)
-                </h2>
+                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">🕒 Wann treten Meldungen auf? (Uhrzeit)</h2>
                 <div class="h-[250px]"><canvas id="hourChart"></canvas></div>
             </div>
 
@@ -74,108 +75,111 @@
             </div>
 
             <div class="bg-white p-6 rounded-[2.5rem] shadow-lg">
-                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">🏆 Team-Leistung (Erledigt)</h2>
+                <h2 class="text-firma-green font-black uppercase text-[11px] mb-4">🏆 Erledigte Aufgaben pro Admin</h2>
                 <div class="h-[250px]"><canvas id="adminChart"></canvas></div>
             </div>
         </div>
     </div>
 
     <script>
+        // Beibehaltene Supabase-Konfiguration
         const SUPABASE_URL = 'https://khptivsvjngoicpknecj.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let charts = {}; // Speicher für Chart-Instanzen zum Zerstören/Neuzeichnen
+        let charts = {}; 
 
         async function initStats() {
             const daysFilter = document.getElementById('time-filter').value;
+            // Holt alle Daten, um langfristige Muster beizubehalten
             let { data, error } = await _supabase.from('meldungen').select('*');
-            if (error) return;
+            if (error) { console.error(error); return; }
 
-            // Filtern nach Zeit
+            // Filter-Logik (behält Archivdaten in DB, filtert nur Ansicht)
             if (daysFilter !== 'all') {
                 const limit = new Date();
                 limit.setDate(limit.getDate() - parseInt(daysFilter));
                 data = data.filter(m => new Date(m.created_at) >= limit);
             }
 
-            // Daten-Strukturierung
+            // Daten-Verarbeitung (beinhaltet alte Typen & neue Admin-Zuordnung)
             const dayCounts = new Array(7).fill(0);
             const hourCounts = new Array(24).fill(0);
             const types = {};
             const admins = {};
-            let erledigtCount = 0;
+            let done = 0;
 
             data.forEach(m => {
                 const date = new Date(m.created_at);
                 dayCounts[date.getDay()]++;
                 hourCounts[date.getHours()]++;
                 types[m.typ] = (types[m.typ] || 0) + 1;
-                if (m.status === 'erledigt' && m.erledigt_von) {
-                    erledigtCount++;
-                    admins[m.erledigt_von] = (admins[m.erledigt_von] || 0) + 1;
+                
+                if (m.status === 'erledigt') {
+                    done++;
+                    if (m.erledigt_von) {
+                        admins[m.erledigt_von] = (admins[m.erledigt_von] || 0) + 1;
+                    }
                 }
             });
 
-            updateUI(data.length, erledigtCount, types, admins);
+            updateCards(data.length, done, types, admins);
             renderCharts(dayCounts, hourCounts, types, admins);
         }
 
-        function updateUI(total, erledigt, types, admins) {
+        function updateCards(total, done, types, admins) {
             document.getElementById('stat-total').innerText = total;
-            document.getElementById('stat-ratio').innerText = total > 0 ? Math.round((erledigt / total) * 100) + "%" : "0%";
-            
-            const topProb = Object.entries(types).sort((a,b) => b[1] - a[1])[0];
-            document.getElementById('stat-top').innerText = topProb ? topProb[0] : "--";
-
+            document.getElementById('stat-ratio').innerText = total > 0 ? Math.round((done / total) * 100) + "%" : "0%";
+            const top = Object.entries(types).sort((a,b) => b[1] - a[1])[0];
+            document.getElementById('stat-top').innerText = top ? top[0] : "--";
             const topAdmin = Object.entries(admins).sort((a,b) => b[1] - a[1])[0];
             document.getElementById('stat-admin').innerText = topAdmin ? topAdmin[0] : "--";
         }
 
         function renderCharts(dayData, hourData, typeData, adminData) {
-            const cfg = { responsive: true, maintainAspectRatio: false };
+            const commonOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
             
-            // Charts löschen falls sie existieren (für Filter-Wechsel)
+            // Verhindert Grafik-Fehler beim Filtern
             Object.values(charts).forEach(c => c.destroy());
 
-            // 1. Wochentage
+            // 1. Wochentage (Bar)
             charts.days = new Chart(document.getElementById('weekdayChart'), {
                 type: 'bar',
                 data: {
                     labels: ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'],
-                    datasets: [{ label: 'Meldungen', data: dayData, backgroundColor: '#006959', borderRadius: 8 }]
+                    datasets: [{ data: dayData, backgroundColor: '#006959', borderRadius: 10 }]
                 },
-                options: cfg
+                options: commonOptions
             });
 
-            // 2. Uhrzeiten
+            // 2. Uhrzeiten (Line - perfekt für Muster-Erkennung)
             charts.hours = new Chart(document.getElementById('hourChart'), {
                 type: 'line',
                 data: {
                     labels: Array.from({length: 24}, (_, i) => i + ':00'),
-                    datasets: [{ label: 'Meldungen', data: hourData, borderColor: '#F4B827', tension: 0.4, fill: true, backgroundColor: 'rgba(244, 184, 39, 0.1)' }]
+                    datasets: [{ data: hourData, borderColor: '#F4B827', backgroundColor: 'rgba(244, 184, 39, 0.1)', fill: true, tension: 0.4 }]
                 },
-                options: cfg
+                options: commonOptions
             });
 
-            // 3. Typen
+            // 3. Typen (Doughnut - beibehalten)
             charts.types = new Chart(document.getElementById('typeChart'), {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(typeData),
                     datasets: [{ data: Object.values(typeData), backgroundColor: ['#006959', '#F4B827', '#10b981', '#3b82f6', '#ef4444'] }]
                 },
-                options: { ...cfg, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
+                options: { ...commonOptions, plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 8, font: { size: 9 } } } } }
             });
 
-            // 4. Admins
+            // 4. Admins (Horizontal Bar)
             charts.admins = new Chart(document.getElementById('adminChart'), {
                 type: 'bar',
                 data: {
                     labels: Object.keys(adminData),
-                    datasets: [{ label: 'Erledigt', data: Object.values(adminData), backgroundColor: '#F4B827', borderRadius: 8 }]
+                    datasets: [{ data: Object.values(adminData), backgroundColor: '#F4B827', borderRadius: 10 }]
                 },
-                options: { ...cfg, indexAxis: 'y' }
+                options: { ...commonOptions, indexAxis: 'y' }
             });
         }
 
