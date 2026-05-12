@@ -31,18 +31,21 @@
 
     <div class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/20 relative min-h-[650px] flex flex-col">
         
+        <!-- Header -->
         <div class="bg-white p-6 text-center relative border-b border-gray-100">
             <div class="absolute top-0 left-0 w-full h-2 bg-firma-yellow"></div>
             <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" alt="Logo" class="mx-auto mb-3 h-10 object-contain">
-            <div class="flex justify-center items-center gap-2">
+            <div class="flex flex-col justify-center items-center gap-1">
                 <h1 id="current-location-label" class="text-firma-green font-black uppercase tracking-widest text-[11px]">Standort wählen...</h1>
-                <button onclick="showPopup()" class="text-[9px] bg-gray-100 px-2 py-1 rounded-full font-bold text-gray-400 hover:text-firma-yellow uppercase transition-all underline">📍 Ändern</button>
+                <p id="current-area-label" class="text-gray-400 font-bold text-[9px] uppercase"></p>
+                <button onclick="showPopup()" class="mt-1 text-[9px] bg-gray-100 px-3 py-1 rounded-full font-bold text-gray-400 hover:text-firma-yellow uppercase transition-all underline">📍 Ändern</button>
             </div>
         </div>
 
+        <!-- Main UI -->
         <div id="main-ui" class="p-5 space-y-4 flex-grow flex flex-col justify-between">
             <div class="space-y-3">
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center font-bold">Schnell-Meldung</p>
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Schnell-Meldung</p>
                 
                 <div class="grid grid-cols-1 gap-3">
                     <button id="btn-Seife" onclick="senden('Seife')" class="flex items-center p-4 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:bg-white active:scale-[0.97] transition-all group">
@@ -93,6 +96,7 @@
             </div>
         </div>
 
+        <!-- Success UI -->
         <div id="success-ui" class="hidden p-10 text-center fade-in space-y-4 flex-grow flex flex-col justify-center">
             <div id="status-icon" class="mx-auto flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4 text-green-600 text-3xl">✓</div>
             <div id="uploading-ui" class="hidden flex flex-col items-center gap-3">
@@ -101,28 +105,33 @@
             </div>
             <div id="done-ui">
                 <h2 class="font-black text-xl text-firma-green uppercase mb-2">Vielen Dank!</h2>
-                <p class="text-gray-600 font-bold text-sm">Meldung wurde für <br><span id="success-location" class="text-firma-yellow"></span> gesendet.</p>
+                <p class="text-gray-600 font-bold text-sm">Meldung wurde gesendet für:<br><span id="success-location" class="text-firma-yellow"></span></p>
                 <div class="mt-8 px-4"><div class="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden"><div id="progress-bar" class="h-full bg-firma-yellow w-0 transition-all duration-[3000ms] ease-linear"></div></div></div>
             </div>
         </div>
 
+        <!-- Popup Auswahl -->
         <div id="popup" class="absolute inset-0 overlay flex items-center justify-center p-6 fade-in">
             <div class="bg-white w-full p-8 rounded-[2.5rem] shadow-2xl border-b-8 border-firma-yellow space-y-5 text-center">
                 <div class="text-4xl">📍</div>
                 <h3 class="font-black text-firma-green uppercase text-sm">Standort wählen</h3>
                 <div class="space-y-2">
-                    <select id="pop-standort" class="w-full p-4 bg-gray-100 rounded-2xl font-bold text-xs outline-none border-2 border-transparent focus:border-firma-yellow">
+                    <select id="pop-standort" onchange="updateBereichsOptionen()" class="w-full p-4 bg-gray-100 rounded-2xl font-bold text-xs outline-none border-2 border-transparent focus:border-firma-yellow">
                         <option value="">Standort...</option>
                         <option value="HVS">HVS</option>
                         <option value="LZW">LZW</option>
                         <option value="LZS">LZS</option>
                         <option value="LZO">LZO</option>
                     </select>
-                    <select id="pop-etage" class="w-full p-4 bg-gray-100 rounded-2xl font-bold text-xs outline-none border-2 border-transparent focus:border-firma-yellow">
+                    <select id="pop-etage" onchange="updateBereichsOptionen()" class="w-full p-4 bg-gray-100 rounded-2xl font-bold text-xs outline-none border-2 border-transparent focus:border-firma-yellow">
                         <option value="">Etage...</option>
                         <option value="EG">Erdgeschoss</option>
                         <option value="1. OG">1. Etage</option>
                         <option value="2. OG">2. Etage</option>
+                    </select>
+                    <!-- Bereichs-Auswahl (WC-Unterscheidung) -->
+                    <select id="pop-bereich" class="w-full p-4 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl font-bold text-xs outline-none focus:border-firma-yellow">
+                        <option value="">WC-Bereich wählen...</option>
                     </select>
                 </div>
                 <button onclick="confirmLocation()" class="w-full bg-firma-yellow text-white p-4 rounded-2xl font-black uppercase text-xs">Bestätigen</button>
@@ -135,18 +144,55 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // Mapping für die Toiletten-Unterscheidung
+        const bereichsMapping = {
+            "HVS": {
+                "EG": ["Toilette Vertrieb", "Toilette Kantine"],
+                "1. OG": ["WC Allgemein"],
+                "2. OG": ["WC Allgemein"]
+            }
+            // Weitere Standorte können hier nach dem gleichen Muster ergänzt werden
+        };
+
         let selectedFile = null;
         let currentS = "";
         let currentE = "";
+        let currentB = "";
 
         function showPopup() { document.getElementById('popup').classList.remove('hidden'); }
+
+        function updateBereichsOptionen() {
+            const s = document.getElementById('pop-standort').value;
+            const e = document.getElementById('pop-etage').value;
+            const bSelect = document.getElementById('pop-bereich');
+            
+            bSelect.innerHTML = '<option value="">WC-Bereich wählen...</option>';
+            
+            if(s && e) {
+                const bereiche = (bereichsMapping[s] && bereichsMapping[s][e]) ? bereichsMapping[s][e] : ["WC Allgemein"];
+                bereiche.forEach(b => {
+                    const opt = document.createElement('option');
+                    opt.value = b;
+                    opt.innerText = b;
+                    bSelect.appendChild(opt);
+                });
+                // Falls nur eine Option da ist, direkt wählen
+                if(bereiche.length === 1) bSelect.value = bereiche[0];
+            }
+        }
 
         async function confirmLocation() {
             currentS = document.getElementById('pop-standort').value;
             currentE = document.getElementById('pop-etage').value;
-            if (!currentS || !currentE) { alert("Bitte beides wählen!"); return; }
+            currentB = document.getElementById('pop-bereich').value;
+
+            if (!currentS || !currentE || !currentB) { 
+                alert("Bitte Standort, Etage und WC-Bereich wählen!"); 
+                return; 
+            }
             
             document.getElementById('current-location-label').innerText = `${currentS} | ${currentE}`;
+            document.getElementById('current-area-label').innerText = currentB;
             document.getElementById('popup').classList.add('hidden');
             checkStatus();
         }
@@ -159,7 +205,14 @@
                 btn.querySelector('.status-text').innerText = "Verfügbar";
             });
 
-            const { data, error } = await _supabase.from('meldungen').select('typ').eq('standort', currentS).eq('etage', currentE).eq('status', 'offen');
+            // Wir prüfen den Status inkl. des Bereichs (kombiniert im Feld etage)
+            const combinedFloor = `${currentE} | ${currentB}`;
+            const { data, error } = await _supabase.from('meldungen')
+                .select('typ')
+                .eq('standort', currentS)
+                .eq('etage', combinedFloor)
+                .eq('status', 'offen');
+
             if (data) {
                 data.forEach(m => {
                     const btn = document.getElementById('btn-' + m.typ);
@@ -192,12 +245,11 @@
         }
 
         async function senden(typ) {
-            if(!currentS || !currentE) { alert("Bitte erst Standort wählen!"); showPopup(); return; }
+            if(!currentS || !currentE || !currentB) { alert("Bitte erst Standort wählen!"); showPopup(); return; }
             
             const nachricht = document.getElementById('gast-nachricht').value;
             let fotoUrl = null;
 
-            // Lade-UI vorbereiten
             document.getElementById('main-ui').classList.add('hidden');
             document.getElementById('success-ui').classList.remove('hidden');
             document.getElementById('status-icon').classList.add('hidden');
@@ -205,21 +257,21 @@
             document.getElementById('uploading-ui').classList.remove('hidden');
 
             try {
-                // 1. Foto Upload falls vorhanden
                 if (selectedFile) {
                     const fileName = `${Date.now()}_${selectedFile.name}`;
                     const { data: upData, error: uploadError } = await _supabase.storage.from('reparatur-fotos').upload(fileName, selectedFile);
                     if (uploadError) throw uploadError;
-
                     const { data: publicUrlData } = _supabase.storage.from('reparatur-fotos').getPublicUrl(fileName);
                     fotoUrl = publicUrlData.publicUrl;
                 }
 
-                // 2. Eintrag in Datenbank
+                // WICHTIG: Wir speichern den Bereich mit in das Etagen-Feld ein
+                const combinedFloor = `${currentE} | ${currentB}`;
+
                 const { error: dbError } = await _supabase.from('meldungen').insert([{
                     typ: typ, 
                     standort: currentS, 
-                    etage: currentE, 
+                    etage: combinedFloor, 
                     nachricht: nachricht, 
                     foto_url: fotoUrl, 
                     status: 'offen'
@@ -227,11 +279,10 @@
 
                 if (dbError) throw dbError;
 
-                // 3. Erfolg anzeigen
                 document.getElementById('uploading-ui').classList.add('hidden');
                 document.getElementById('status-icon').classList.remove('hidden');
                 document.getElementById('done-ui').classList.remove('hidden');
-                document.getElementById('success-location').innerText = `${currentS}, ${currentE}`;
+                document.getElementById('success-location').innerText = `${currentS}, ${combinedFloor}`;
 
                 setTimeout(() => { document.getElementById('progress-bar').style.width = '100%'; }, 50);
 
@@ -247,7 +298,6 @@
             } catch (err) {
                 console.error(err);
                 alert("Fehler beim Senden: " + (err.message || "Unbekannter Fehler"));
-                // Zurück zum Hauptmenü bei Fehler
                 document.getElementById('main-ui').classList.remove('hidden');
                 document.getElementById('success-ui').classList.add('hidden');
             }
