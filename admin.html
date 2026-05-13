@@ -10,11 +10,9 @@
         .text-firma-green { color: #006959; }
         .bg-firma-green { background-color: #006959; }
         .bg-firma-yellow { background-color: #F4B827; }
-        /* Neue, kräftigere Status-Farben */
         .status-green { border-left-color: #10b981 !important; border-left-width: 6px !important; }
         .status-orange { border-left-color: #f59e0b !important; border-left-width: 6px !important; }
         .status-red { border-left-color: #dc2626 !important; border-left-width: 6px !important; }
-        
         .indicator-dot { animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
         .fade-in { animation: fadeIn 0.2s ease-out forwards; }
@@ -24,6 +22,7 @@
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 min-h-screen pb-10 antialiased">
 
+    <!-- Login bleibt gleich -->
     <div id="login-section" class="max-w-md mx-auto mt-20 p-8 bg-white rounded-[2.5rem] shadow-2xl text-center border border-gray-100 relative overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-1.5 bg-firma-yellow"></div>
         <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" class="h-10 mx-auto mb-6 mt-2">
@@ -41,26 +40,24 @@
                 <option value="Birgit">👤 Birgit</option>
             </select>
             <div class="flex gap-2">
-                <a href="stats.html" class="bg-firma-green text-white px-4 py-2 rounded-xl font-bold text-[10px] uppercase shadow-sm">📊 Stats</a>
                 <button onclick="loadData()" class="bg-gray-100 text-gray-500 px-4 py-2 rounded-xl font-bold text-[10px] uppercase">🔄 Refresh</button>
             </div>
-        </div>
-
-        <div class="bg-white/70 p-4 rounded-2xl border border-gray-200 flex flex-wrap justify-center gap-4 text-[9px] font-black uppercase tracking-wider text-gray-500 shadow-sm">
-            <div class="flex items-center gap-2"><span class="w-4 h-2 bg-[#10b981] rounded-full"></span> < 20 Min</div>
-            <div class="flex items-center gap-2"><span class="w-4 h-2 bg-[#f59e0b] rounded-full"></span> > 20 Min</div>
-            <div class="flex items-center gap-2"><span class="w-4 h-2 bg-[#dc2626] rounded-full"></span> > 1 Std</div>
-            <div class="flex items-center gap-2"><span class="w-2 h-2 bg-red-500 rounded-full indicator-dot"></span> Etwas offen</div>
         </div>
 
         <section>
             <div class="flex justify-between items-end mb-3 px-2">
                 <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">1. Standort-Radar</h2>
-                <button onclick="resetAllFilters()" class="bg-blue-600 text-white px-4 py-1.5 rounded-full font-black text-[9px] uppercase shadow-md active:scale-90 transition-all">
-                    🌐 Alle anzeigen
-                </button>
+                <button onclick="resetAllFilters()" class="bg-blue-600 text-white px-4 py-1.5 rounded-full font-black text-[9px] uppercase shadow-md active:scale-90 transition-all">🌐 Alle anzeigen</button>
             </div>
-            <div id="radar-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+            
+            <!-- Haupt-Standorte -->
+            <div id="radar-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4"></div>
+
+            <!-- NEU: Etagen-Auswahl (Dropdown-Ersatz) -->
+            <div id="floor-container" class="hidden fade-in bg-white/50 p-3 rounded-[2rem] border border-dashed border-gray-300">
+                <p class="text-[8px] font-black text-gray-400 uppercase text-center mb-2">Etage wählen</p>
+                <div id="floor-grid" class="flex flex-wrap justify-center gap-2"></div>
+            </div>
         </section>
 
         <section>
@@ -84,11 +81,18 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        document.getElementById('pin').addEventListener('keypress', (e) => { if (e.key === 'Enter') checkPin(); });
+        // Die Struktur für die Etagen (Synchron zur App)
+        const config = {
+            "HVS": ["EG", "1. OG"],
+            "LZW": ["EG", "1. OG", "2. OG"],
+            "LZS": ["EG", "1. OG", "2. OG"],
+            "LZO": ["EG", "1. OG", "2. OG"]
+        };
 
         let allMeldungen = [];
         let currentFilterType = 'all';
         let currentFilterLocation = 'all';
+        let currentFilterFloor = 'all';
 
         async function checkPin() {
             const eingabe = document.getElementById('pin').value;
@@ -109,12 +113,14 @@
         }
 
         function renderRadar() {
-            const locations = ['LZW', 'HVS', 'LZO', 'LZS']; 
+            const locations = ['LZW', 'HVS', 'LZO', 'LZS'];
             const grid = document.getElementById('radar-grid');
             grid.innerHTML = '';
+            
             locations.forEach(loc => {
                 const count = allMeldungen.filter(m => m.standort === loc).length;
                 const activeStyle = currentFilterLocation === loc ? 'border-firma-yellow ring-2 ring-firma-yellow/20 bg-gray-50 shadow-md' : 'border-transparent bg-white shadow-sm';
+                
                 grid.innerHTML += `
                     <button onclick="setLocationFilter('${loc}')" class="p-5 rounded-[2rem] border-2 ${activeStyle} transition-all relative flex flex-col items-center">
                         ${count > 0 ? `<span class="absolute top-4 right-4 w-3 h-3 bg-red-500 rounded-full indicator-dot shadow-lg"></span>` : ''}
@@ -122,11 +128,58 @@
                         <span class="text-[9px] font-bold text-gray-400 mt-1 uppercase">${count} Offen</span>
                     </button>`;
             });
+
+            renderFloorBar();
+        }
+
+        function renderFloorBar() {
+            const container = document.getElementById('floor-container');
+            const grid = document.getElementById('floor-grid');
+            
+            if (currentFilterLocation === 'all') {
+                container.classList.add('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+            grid.innerHTML = '';
+            
+            const floors = config[currentFilterLocation] || [];
+            floors.forEach(floor => {
+                // Prüfen ob auf dieser spezifischen Etage etwas offen ist (Etage im DB-Feld fängt mit dem Kürzel an)
+                const hasIssue = allMeldungen.some(m => m.standort === currentFilterLocation && m.etage.startsWith(floor));
+                const isSelected = currentFilterFloor === floor;
+
+                grid.innerHTML += `
+                    <button onclick="setFloorFilter('${floor}')" class="px-4 py-2 rounded-xl font-black text-[10px] uppercase transition-all flex items-center gap-2 ${isSelected ? 'bg-firma-yellow text-white shadow-md' : 'bg-white text-gray-400 border border-gray-100 shadow-sm'}">
+                        ${floor}
+                        ${hasIssue ? `<span class="w-2 h-2 bg-red-500 rounded-full ${isSelected ? 'bg-white' : 'indicator-dot'}"></span>` : ''}
+                    </button>`;
+            });
+        }
+
+        function setLocationFilter(loc) {
+            if (currentFilterLocation === loc) {
+                currentFilterLocation = 'all';
+                currentFilterFloor = 'all';
+            } else {
+                currentFilterLocation = loc;
+                currentFilterFloor = 'all'; // Reset Etage wenn Standort wechselt
+            }
+            renderRadar();
+            renderList();
+        }
+
+        function setFloorFilter(floor) {
+            currentFilterFloor = currentFilterFloor === floor ? 'all' : floor;
+            renderFloorBar();
+            renderList();
         }
 
         function resetAllFilters() {
             currentFilterType = 'all';
             currentFilterLocation = 'all';
+            currentFilterFloor = 'all';
             renderRadar();
             renderList();
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.toggle('border-firma-yellow', btn.innerText === 'Alle'));
@@ -141,38 +194,27 @@
             });
         }
 
-        function setLocationFilter(loc) {
-            currentFilterLocation = currentFilterLocation === loc ? 'all' : loc;
-            renderRadar();
-            renderList();
-        }
-
         function renderList() {
             const liste = document.getElementById('liste');
             let filtered = allMeldungen;
+            
             if (currentFilterType !== 'all') filtered = filtered.filter(m => m.typ === currentFilterType);
             if (currentFilterLocation !== 'all') filtered = filtered.filter(m => m.standort === currentFilterLocation);
+            if (currentFilterFloor !== 'all') filtered = filtered.filter(m => m.etage.startsWith(currentFilterFloor));
 
             liste.innerHTML = '';
             if (filtered.length === 0) {
-                liste.innerHTML = '<div class="text-center py-10 bg-white rounded-[2rem] border border-gray-100 text-gray-300 font-bold uppercase text-[10px] tracking-widest">✨ Alles sauber!</div>';
+                liste.innerHTML = '<div class="text-center py-10 bg-white rounded-[2rem] border border-gray-100 text-gray-300 font-bold uppercase text-[10px] tracking-widest">✨ Alles erledigt!</div>';
                 return;
             }
 
             filtered.forEach(m => {
                 const diffMin = Math.floor((new Date() - new Date(m.created_at)) / 60000);
-                
-                // Klare Farbunterscheidung
                 let statusClass = 'status-green';
                 let timeTextClass = 'text-emerald-600 font-bold';
                 
-                if (diffMin >= 60) {
-                    statusClass = 'status-red';
-                    timeTextClass = 'text-red-600 font-black';
-                } else if (diffMin >= 20) {
-                    statusClass = 'status-orange';
-                    timeTextClass = 'text-amber-500 font-black';
-                }
+                if (diffMin >= 60) { statusClass = 'status-red'; timeTextClass = 'text-red-600 font-black'; }
+                else if (diffMin >= 20) { statusClass = 'status-orange'; timeTextClass = 'text-amber-500 font-black'; }
 
                 liste.innerHTML += `
                     <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 ${statusClass} flex items-center justify-between gap-4 fade-in">
@@ -183,21 +225,16 @@
                             </div>
                             <p class="font-black text-gray-700 text-sm uppercase truncate tracking-tight">${m.typ}</p>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <span class="text-[7px] font-black text-gray-400 uppercase text-right leading-tight">Erledigt?<br>Drücken</span>
-                            <button onclick="erledigen(this, '${m.id}')" class="bg-firma-yellow text-white w-12 h-12 rounded-2xl flex items-center justify-center font-bold shadow-md active:scale-90 transition-all text-xl">✓</button>
-                        </div>
+                        <button onclick="erledigen(this, '${m.id}')" class="bg-firma-yellow text-white w-12 h-12 rounded-2xl flex items-center justify-center font-bold shadow-md active:scale-90 transition-all text-xl">✓</button>
                     </div>`;
             });
         }
 
         async function erledigen(btn, id) {
-            const label = btn.previousElementSibling;
-            label.innerText = "Super!";
-            label.style.color = "#10b981";
+            btn.innerHTML = "⌛";
             const name = document.getElementById('admin-name-select').value;
             await _supabase.from('meldungen').update({ status: 'erledigt', erledigt_von: name, erledigt_am: new Date().toISOString() }).eq('id', id);
-            setTimeout(() => loadData(), 500);
+            setTimeout(() => loadData(), 300);
         }
 
         function initRealtime() {
