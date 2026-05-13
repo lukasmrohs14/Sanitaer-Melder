@@ -10,19 +10,25 @@
         .text-firma-green { color: #006959; }
         .bg-firma-green { background-color: #006959; }
         .bg-firma-yellow { background-color: #F4B827; }
+        
+        /* Status-Indikatoren an der Seite der Aufgaben */
         .status-green { border-left-color: #10b981 !important; border-left-width: 6px !important; }
         .status-orange { border-left-color: #f59e0b !important; border-left-width: 6px !important; }
         .status-red { border-left-color: #dc2626 !important; border-left-width: 6px !important; }
+        
+        /* Der blinkende Punkt für neue Meldungen */
         .indicator-dot { animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        
         .fade-in { animation: fadeIn 0.2s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
         .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 min-h-screen pb-10 antialiased">
 
-    <!-- Login bleibt gleich -->
+    <!-- Login Sektion -->
     <div id="login-section" class="max-w-md mx-auto mt-20 p-8 bg-white rounded-[2.5rem] shadow-2xl text-center border border-gray-100 relative overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-1.5 bg-firma-yellow"></div>
         <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" class="h-10 mx-auto mb-6 mt-2">
@@ -30,46 +36,53 @@
         <button onclick="checkPin()" class="w-full bg-firma-yellow text-white p-4 rounded-2xl font-black uppercase shadow-lg">Einloggen</button>
     </div>
 
+    <!-- Admin Haupt-Content -->
     <div id="admin-content" class="hidden max-w-4xl mx-auto p-4 space-y-6">
         
+        <!-- Header mit User-Wahl -->
         <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-6 rounded-[2rem] shadow-sm relative overflow-hidden border border-gray-100">
             <div class="absolute top-0 left-0 w-full h-1.5 bg-firma-yellow"></div>
             <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" class="h-8 mt-2">
-            <select id="admin-name-select" class="bg-gray-50 border-none rounded-xl p-3 font-bold text-firma-green uppercase text-xs outline-none shadow-inner">
-                <option value="Felix">👤 Felix</option>
-                <option value="Birgit">👤 Birgit</option>
-            </select>
-            <div class="flex gap-2">
-                <button onclick="loadData()" class="bg-gray-100 text-gray-500 px-4 py-2 rounded-xl font-bold text-[10px] uppercase">🔄 Refresh</button>
+            <div class="flex items-center gap-3">
+                <select id="admin-name-select" class="bg-gray-50 border-none rounded-xl p-3 font-bold text-firma-green uppercase text-xs outline-none shadow-inner">
+                    <option value="Felix">👤 Felix</option>
+                    <option value="Birgit">👤 Birgit</option>
+                </select>
+                <button onclick="loadData()" class="bg-gray-100 text-gray-500 px-4 py-2 rounded-xl font-bold text-[10px] uppercase hover:bg-gray-200 transition-colors">🔄 Refresh</button>
             </div>
         </div>
 
+        <!-- 1. Standort-Radar -->
         <section>
             <div class="flex justify-between items-end mb-3 px-2">
                 <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">1. Standort-Radar</h2>
-                <button onclick="resetAllFilters()" class="bg-blue-600 text-white px-4 py-1.5 rounded-full font-black text-[9px] uppercase shadow-md active:scale-90 transition-all">🌐 Alle anzeigen</button>
+                <button onclick="resetAllFilters()" class="bg-blue-600 text-white px-4 py-1.5 rounded-full font-black text-[9px] uppercase shadow-md active:scale-95 transition-all">
+                    🌐 Alle anzeigen
+                </button>
             </div>
             
-            <!-- Haupt-Standorte -->
+            <!-- Standort-Grid (LZW, HVS, etc.) -->
             <div id="radar-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4"></div>
 
-            <!-- NEU: Etagen-Auswahl (Dropdown-Ersatz) -->
+            <!-- Etagen-Auswahl (Erscheint bei Standort-Klick) -->
             <div id="floor-container" class="hidden fade-in bg-white/50 p-3 rounded-[2rem] border border-dashed border-gray-300">
                 <p class="text-[8px] font-black text-gray-400 uppercase text-center mb-2">Etage wählen</p>
                 <div id="floor-grid" class="flex flex-wrap justify-center gap-2"></div>
             </div>
         </section>
 
+        <!-- 2. Themen-Filter -->
         <section>
             <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-2">2. Themen-Filter</h2>
             <div id="type-filter" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                <button onclick="setFilter('all')" class="filter-btn active whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent">Alle</button>
-                <button onclick="setFilter('Seife')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent">🧼 Seife</button>
-                <button onclick="setFilter('Klopapier')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent">🧻 Klopapier</button>
-                <button onclick="setFilter('Handtücher')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent">🖐️ Handtücher</button>
+                <button onclick="setFilter('all')" class="filter-btn border-firma-yellow whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent transition-all">ALLE</button>
+                <button onclick="setFilter('Seife')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent transition-all">🧼 Seife</button>
+                <button onclick="setFilter('Klopapier')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent transition-all">🧻 Klopapier</button>
+                <button onclick="setFilter('Handtücher')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent transition-all">🖐️ Handtücher</button>
             </div>
         </section>
 
+        <!-- 3. Aufgaben-Liste -->
         <section>
             <h2 id="list-title" class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-2">3. Aufgaben</h2>
             <div id="liste" class="space-y-3"></div>
@@ -81,7 +94,6 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Die Struktur für die Etagen (Synchron zur App)
         const config = {
             "HVS": ["EG", "1. OG"],
             "LZW": ["EG", "1. OG", "2. OG"],
@@ -94,6 +106,7 @@
         let currentFilterLocation = 'all';
         let currentFilterFloor = 'all';
 
+        // PIN Check
         async function checkPin() {
             const eingabe = document.getElementById('pin').value;
             const { data: isValid } = await _supabase.rpc('check_admin_pin', { input_pin: eingabe });
@@ -112,6 +125,7 @@
             renderList();
         }
 
+        // Zeichnet die 4 Standort-Buttons
         function renderRadar() {
             const locations = ['LZW', 'HVS', 'LZO', 'LZS'];
             const grid = document.getElementById('radar-grid');
@@ -119,7 +133,7 @@
             
             locations.forEach(loc => {
                 const count = allMeldungen.filter(m => m.standort === loc).length;
-                const activeStyle = currentFilterLocation === loc ? 'border-firma-yellow ring-2 ring-firma-yellow/20 bg-gray-50 shadow-md' : 'border-transparent bg-white shadow-sm';
+                const activeStyle = currentFilterLocation === loc ? 'border-firma-yellow ring-4 ring-firma-yellow/20 bg-gray-50' : 'border-transparent bg-white shadow-sm';
                 
                 grid.innerHTML += `
                     <button onclick="setLocationFilter('${loc}')" class="p-5 rounded-[2rem] border-2 ${activeStyle} transition-all relative flex flex-col items-center">
@@ -128,10 +142,10 @@
                         <span class="text-[9px] font-bold text-gray-400 mt-1 uppercase">${count} Offen</span>
                     </button>`;
             });
-
             renderFloorBar();
         }
 
+        // Zeichnet die Etagen-Buttons (EG, 1. OG etc.)
         function renderFloorBar() {
             const container = document.getElementById('floor-container');
             const grid = document.getElementById('floor-grid');
@@ -146,7 +160,6 @@
             
             const floors = config[currentFilterLocation] || [];
             floors.forEach(floor => {
-                // Prüfen ob auf dieser spezifischen Etage etwas offen ist (Etage im DB-Feld fängt mit dem Kürzel an)
                 const hasIssue = allMeldungen.some(m => m.standort === currentFilterLocation && m.etage.startsWith(floor));
                 const isSelected = currentFilterFloor === floor;
 
@@ -159,13 +172,8 @@
         }
 
         function setLocationFilter(loc) {
-            if (currentFilterLocation === loc) {
-                currentFilterLocation = 'all';
-                currentFilterFloor = 'all';
-            } else {
-                currentFilterLocation = loc;
-                currentFilterFloor = 'all'; // Reset Etage wenn Standort wechselt
-            }
+            currentFilterLocation = currentFilterLocation === loc ? 'all' : loc;
+            currentFilterFloor = 'all';
             renderRadar();
             renderList();
         }
@@ -176,20 +184,27 @@
             renderList();
         }
 
+        // WICHTIG: Die gefixte Reset-Funktion
         function resetAllFilters() {
             currentFilterType = 'all';
             currentFilterLocation = 'all';
             currentFilterFloor = 'all';
+            
+            // UI Resets
+            document.getElementById('floor-container').classList.add('hidden');
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('border-firma-yellow', btn.innerText === 'ALLE');
+            });
+
             renderRadar();
             renderList();
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.toggle('border-firma-yellow', btn.innerText === 'Alle'));
         }
 
         function setFilter(type) {
             currentFilterType = type;
             renderList();
             document.querySelectorAll('.filter-btn').forEach(btn => {
-                const isSelected = (type === 'all' && btn.innerText === 'Alle') || btn.innerText.includes(type);
+                const isSelected = (type === 'all' && btn.innerText === 'ALLE') || btn.innerText.includes(type);
                 btn.classList.toggle('border-firma-yellow', isSelected);
             });
         }
@@ -204,7 +219,7 @@
 
             liste.innerHTML = '';
             if (filtered.length === 0) {
-                liste.innerHTML = '<div class="text-center py-10 bg-white rounded-[2rem] border border-gray-100 text-gray-300 font-bold uppercase text-[10px] tracking-widest">✨ Alles erledigt!</div>';
+                liste.innerHTML = '<div class="text-center py-12 bg-white rounded-[2rem] border border-gray-100 text-gray-300 font-bold uppercase text-[10px] tracking-widest">✨ Alles erledigt!</div>';
                 return;
             }
 
@@ -232,14 +247,22 @@
 
         async function erledigen(btn, id) {
             btn.innerHTML = "⌛";
+            btn.disabled = true;
             const name = document.getElementById('admin-name-select').value;
-            await _supabase.from('meldungen').update({ status: 'erledigt', erledigt_von: name, erledigt_am: new Date().toISOString() }).eq('id', id);
+            await _supabase.from('meldungen').update({ 
+                status: 'erledigt', 
+                erledigt_von: name, 
+                erledigt_am: new Date().toISOString() 
+            }).eq('id', id);
             setTimeout(() => loadData(), 300);
         }
 
         function initRealtime() {
             _supabase.channel('admin').on('postgres_changes', { event: '*', schema: 'public', table: 'meldungen' }, () => loadData()).subscribe();
         }
+
+        // PIN mit Enter bestätigen
+        document.getElementById('pin').addEventListener('keypress', (e) => { if (e.key === 'Enter') checkPin(); });
     </script>
 </body>
 </html>
