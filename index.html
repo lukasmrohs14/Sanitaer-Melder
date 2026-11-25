@@ -14,7 +14,6 @@
         * { -webkit-tap-highlight-color: transparent; }
         .fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
-        .overlay { backdrop-filter: blur(12px); background: rgba(255,255,255,0.9); z-index: 100; }
         .disabled-btn { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #006959; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -23,65 +22,60 @@
 <body class="bg-gray-100 font-sans text-gray-800 flex items-center justify-center min-h-screen p-4 antialiased">
 
     <div class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/20 relative min-h-[650px] flex flex-col">
-        
-        <!-- Header -->
+
+        <!-- Header: Ort kommt fest aus dem QR-Code, kein "Ändern" mehr -->
         <div class="bg-white p-6 text-center relative border-b border-gray-100 shrink-0">
             <div class="absolute top-0 left-0 w-full h-2 bg-firma-yellow"></div>
             <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" alt="Logo" class="mx-auto mb-3 h-12 w-auto object-contain">
             <div class="flex flex-col justify-center items-center gap-1">
-                <h1 id="current-location-label" class="text-firma-green font-black uppercase tracking-widest text-[11px]">Standort wählen...</h1>
+                <h1 id="current-location-label" class="text-firma-green font-black uppercase tracking-widest text-[11px]">Ort wird geladen...</h1>
                 <p id="current-area-label" class="text-gray-400 font-bold text-[9px] uppercase"></p>
-                <button onclick="showPopup()" class="mt-1 text-[9px] bg-gray-100 px-3 py-1 rounded-full font-bold text-gray-400 hover:text-firma-yellow uppercase transition-all underline">📍 Ändern</button>
             </div>
         </div>
 
-        <!-- Main UI -->
-        <div id="main-ui" class="p-5 space-y-4 flex-grow flex flex-col justify-between overflow-y-auto">
-            <div class="space-y-3">
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Schnell-Meldung</p>
-                <div class="grid grid-cols-1 gap-3">
-                    <button id="btn-Seife" onclick="senden('Seife')" class="flex items-center p-4 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:bg-white active:scale-[0.97] transition-all group">
-                        <span class="text-3xl mr-4">🧼</span>
-                        <div class="text-left">
-                            <span class="block font-black uppercase text-firma-green text-base leading-tight">Seife leer</span>
-                            <span class="status-text text-[9px] font-bold text-gray-300 uppercase">Verfügbar</span>
-                        </div>
-                    </button>
-                    <button id="btn-Klopapier" onclick="senden('Klopapier')" class="flex items-center p-4 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:bg-white active:scale-[0.97] transition-all group">
-                        <span class="text-3xl mr-4">🧻</span>
-                        <div class="text-left">
-                            <span class="block font-black uppercase text-firma-green text-base leading-tight">Klopapier leer</span>
-                            <span class="status-text text-[9px] font-bold text-gray-300 uppercase">Verfügbar</span>
-                        </div>
-                    </button>
-                    <button id="btn-Handtücher" onclick="senden('Handtücher')" class="flex items-center p-4 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:bg-white active:scale-[0.97] transition-all group">
-                        <span class="text-3xl mr-4">🖐️</span>
-                        <div class="text-left">
-                            <span class="block font-black uppercase text-firma-green text-base leading-tight">Handtücher leer</span>
-                            <span class="status-text text-[9px] font-bold text-gray-300 uppercase">Verfügbar</span>
-                        </div>
-                    </button>
-                </div>
-            </div>
-
-            <div class="pt-4 border-t border-gray-100 space-y-4">
-                <div class="bg-gray-50 p-4 rounded-2xl border-2 border-gray-100">
-                    <div class="flex items-center gap-3">
-                        <input type="file" id="foto-input" accept="image/*" capture="environment" class="hidden" onchange="vorschauBild(this)">
-                        <button onclick="document.getElementById('foto-input').click()" class="bg-gray-200 text-gray-700 p-4 rounded-xl active:scale-95 transition-all text-xl shadow-md">📸</button>
-                        <div id="foto-vorschau-container" class="hidden flex items-center gap-2 flex-grow">
-                            <img id="foto-vorschau" src="" class="h-14 w-14 object-cover rounded-lg border-2 border-firma-green shadow-md">
-                            <button onclick="entferneFoto()" class="text-[10px] text-red-500 font-bold uppercase p-2 bg-red-50 rounded-lg">Löschen</button>
-                        </div>
-                        <p id="foto-text" class="text-[11px] text-gray-400 flex-grow font-medium">Foto hinzufügen (optional)</p>
+        <!-- Main UI: Tipp auf eine Kategorie sendet sofort -->
+        <div id="main-ui" class="hidden p-5 space-y-4 flex-grow flex flex-col overflow-y-auto">
+            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Antippen zum Melden</p>
+            <div class="grid grid-cols-1 gap-3">
+                <button id="btn-Seife" onclick="senden('Seife')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:bg-white active:scale-[0.97] transition-all">
+                    <span class="text-3xl mr-4">🧼</span>
+                    <div class="text-left">
+                        <span class="block font-black uppercase text-firma-green text-base leading-tight">Seife leer</span>
+                        <span class="status-text text-[9px] font-bold text-gray-300 uppercase">Verfügbar</span>
                     </div>
-                </div>
-                <textarea id="gast-nachricht" placeholder="Sonstige Mitteilung / Defekt..." class="w-full p-4 bg-firma-green border-2 border-firma-green rounded-2xl text-sm text-white placeholder-green-100/50 outline-none focus:ring-2 focus:ring-firma-yellow transition-all resize-none shadow-inner h-24"></textarea>
-                <button id="send-btn-main" onclick="senden('Sonstiges')" class="w-full bg-firma-green text-white p-4 rounded-2xl font-black uppercase shadow-lg active:scale-[0.97] transition-all tracking-wider text-sm flex items-center justify-center gap-2 group">Senden ➡</button>
+                </button>
+                <button id="btn-Klopapier" onclick="senden('Klopapier')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:bg-white active:scale-[0.97] transition-all">
+                    <span class="text-3xl mr-4">🧻</span>
+                    <div class="text-left">
+                        <span class="block font-black uppercase text-firma-green text-base leading-tight">Klopapier leer</span>
+                        <span class="status-text text-[9px] font-bold text-gray-300 uppercase">Verfügbar</span>
+                    </div>
+                </button>
+                <button id="btn-Handtücher" onclick="senden('Handtücher')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:bg-white active:scale-[0.97] transition-all">
+                    <span class="text-3xl mr-4">🖐️</span>
+                    <div class="text-left">
+                        <span class="block font-black uppercase text-firma-green text-base leading-tight">Handtücher leer</span>
+                        <span class="status-text text-[9px] font-bold text-gray-300 uppercase">Verfügbar</span>
+                    </div>
+                </button>
+                <button id="btn-Defekt" onclick="senden('Defekt')" class="flex items-center p-5 bg-gray-50 rounded-2xl border-2 border-transparent active:border-firma-green active:bg-white active:scale-[0.97] transition-all">
+                    <span class="text-3xl mr-4">🔧</span>
+                    <div class="text-left">
+                        <span class="block font-black uppercase text-firma-green text-base leading-tight">Defekt melden</span>
+                        <span class="status-text text-[9px] font-bold text-gray-300 uppercase">Verfügbar</span>
+                    </div>
+                </button>
             </div>
         </div>
 
-        <!-- Success UI -->
+        <!-- Fehler: QR-Code ohne gültigen Ort -->
+        <div id="error-ui" class="hidden p-10 text-center fade-in space-y-4 flex-grow flex flex-col justify-center">
+            <div class="mx-auto flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4 text-red-600 text-3xl">!</div>
+            <h2 class="font-black text-xl text-firma-green uppercase">Ort unbekannt</h2>
+            <p class="text-gray-600 font-bold text-sm">Bitte scannen Sie den QR-Code im Sanitärbereich erneut.</p>
+        </div>
+
+        <!-- Success UI (unverändert) -->
         <div id="success-ui" class="hidden p-10 text-center fade-in space-y-4 flex-grow flex flex-col justify-center">
             <div id="status-icon" class="mx-auto flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4 text-green-600 text-3xl">✓</div>
             <div id="uploading-ui" class="hidden flex flex-col items-center gap-3">
@@ -94,35 +88,6 @@
                 <div class="mt-8 px-4"><div class="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden"><div id="progress-bar" class="h-full bg-firma-yellow w-0 transition-all duration-[3000ms] ease-linear"></div></div></div>
             </div>
         </div>
-
-        <!-- Popup Overlay -->
-        <div id="popup" class="absolute inset-0 overlay flex items-center justify-center p-6 fade-in">
-            <div class="bg-white w-full p-8 rounded-[2.5rem] shadow-2xl border-b-8 border-firma-yellow space-y-4 text-center">
-                <div class="text-4xl">📍</div>
-                <h3 class="font-black text-firma-green uppercase text-sm">Standort wählen</h3>
-                <div class="space-y-2">
-                    <select id="pop-standort" onchange="updateEtagenOptionen()" class="w-full p-4 bg-gray-100 rounded-2xl font-bold text-[13px] outline-none border-2 border-transparent focus:border-firma-yellow appearance-none">
-                        <option value="">Standort...</option>
-                        <option value="HVS">HVS</option>
-                        <option value="LZW">LZW</option>
-                        <option value="LZS">LZS</option>
-                        <option value="LZO">LZO</option>
-                    </select>
-                    <select id="pop-etage" onchange="updateBereichsOptionen()" class="w-full p-4 bg-gray-100 rounded-2xl font-bold text-[13px] outline-none border-2 border-transparent focus:border-firma-yellow appearance-none">
-                        <option value="">Etage...</option>
-                    </select>
-                    <select id="pop-bereich" class="w-full p-4 bg-gray-100 rounded-2xl font-bold text-[13px] outline-none border-2 border-transparent focus:border-firma-yellow appearance-none">
-                        <option value="">Bereich wählen...</option>
-                    </select>
-                    <select id="pop-gender" class="w-full p-4 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl font-bold text-[13px] outline-none focus:border-firma-yellow appearance-none">
-                        <option value="">WC-Typ wählen...</option>
-                        <option value="Damen">Damen-WC</option>
-                        <option value="Herren">Herren-WC</option>
-                    </select>
-                </div>
-                <button onclick="confirmLocation()" class="w-full bg-firma-yellow text-white p-4 rounded-2xl font-black uppercase text-xs shadow-md active:scale-95 transition-all">Bestätigen</button>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -130,138 +95,30 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const config = {
-            "HVS": {
-                "EG": ["Toilette Dispo"],
-                "1. OG": ["Toilette Kantine", "Toilette Vertrieb"]
-            },
-            "LZW": { "EG": ["WC Allgemein"], "1. OG": ["WC Allgemein"], "2. OG": ["WC Allgemein"] },
-            "LZS": { "EG": ["WC Allgemein"], "1. OG": ["WC Allgemein"], "2. OG": ["WC Allgemein"] },
-            "LZO": { "EG": ["WC Allgemein"], "1. OG": ["WC Allgemein"], "2. OG": ["WC Allgemein"] }
+        // Feste Kategorien
+        const KATEGORIEN = ['Seife', 'Klopapier', 'Handtücher', 'Defekt'];
+        const WC_TYPEN = ['Damen', 'Herren'];
+
+        // Standorte: deaktivierte bleiben drin, werden aber nicht angenommen (aktiv: false)
+        const STANDORTE = {
+            "HVS": { aktiv: true,  etagen: { "EG": ["Toilette Dispo"], "1. OG": ["Toilette Kantine", "Toilette Vertrieb"] } },
+            "LZW": { aktiv: false, etagen: { "EG": ["WC Allgemein"], "1. OG": ["WC Allgemein"], "2. OG": ["WC Allgemein"] } },
+            "LZS": { aktiv: false, etagen: { "EG": ["WC Allgemein"], "1. OG": ["WC Allgemein"], "2. OG": ["WC Allgemein"] } },
+            "LZO": { aktiv: false, etagen: { "EG": ["WC Allgemein"], "1. OG": ["WC Allgemein"], "2. OG": ["WC Allgemein"] } }
         };
 
-        let currentS = "", currentE = "", currentB = "", currentG = "";
-        let selectedFile = null;
-
-        function showPopup() { document.getElementById('popup').classList.remove('hidden'); }
-
-        function updateEtagenOptionen() {
-            const s = document.getElementById('pop-standort').value;
-            const eSelect = document.getElementById('pop-etage');
-            eSelect.innerHTML = '<option value="">Etage...</option>';
-            if(s && config[s]) {
-                Object.keys(config[s]).forEach(etage => {
-                    const opt = document.createElement('option');
-                    opt.value = etage; opt.innerText = etage === "EG" ? "Erdgeschoss" : etage;
-                    eSelect.appendChild(opt);
-                });
-            }
-            updateBereichsOptionen();
+        // Ort-ID für den QR-Code, z. B. "hvs-eg-toilette-dispo-herren"
+        function slug(text) {
+            return text.toLowerCase()
+                .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+                .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
         }
 
-        function updateBereichsOptionen() {
-            const s = document.getElementById('pop-standort').value;
-            const e = document.getElementById('pop-etage').value;
-            const bSelect = document.getElementById('pop-bereich');
-            bSelect.innerHTML = '<option value="">Bereich wählen...</option>';
-            if(s && e && config[s][e]) {
-                config[s][e].forEach(b => {
-                    const opt = document.createElement('option');
-                    opt.value = b; opt.innerText = b; bSelect.appendChild(opt);
-                });
-                if(config[s][e].length === 1) bSelect.value = config[s][e][0];
-            }
-        }
-
-        async function confirmLocation() {
-            currentS = document.getElementById('pop-standort').value;
-            currentE = document.getElementById('pop-etage').value;
-            currentB = document.getElementById('pop-bereich').value;
-            currentG = document.getElementById('pop-gender').value;
-
-            if (!currentS || !currentE || !currentB || !currentG) { alert("Bitte alle Felder ausfüllen!"); return; }
-            
-            document.getElementById('current-location-label').innerText = `${currentS} | ${currentE}`;
-            document.getElementById('current-area-label').innerText = `${currentB} (${currentG})`;
-            document.getElementById('popup').classList.add('hidden');
-            checkStatus();
-        }
-
-        async function checkStatus() {
-            const types = ['Seife', 'Klopapier', 'Handtücher'];
-            types.forEach(t => {
-                const btn = document.getElementById('btn-' + t);
-                btn.classList.remove('disabled-btn');
-                btn.querySelector('.status-text').innerText = "Verfügbar";
-            });
-            const combinedFloor = `${currentE} | ${currentB} | ${currentG}`;
-            const { data } = await _supabase.from('meldungen').select('typ').eq('standort', currentS).eq('etage', combinedFloor).eq('status', 'offen');
-            if (data) {
-                data.forEach(m => {
-                    const btn = document.getElementById('btn-' + m.typ);
-                    if (btn) { btn.classList.add('disabled-btn'); btn.querySelector('.status-text').innerText = "Bereits gemeldet"; }
-                });
-            }
-        }
-
-        function vorschauBild(input) {
-            if (input.files && input.files[0]) {
-                selectedFile = input.files[0];
-                const reader = new FileReader();
-                reader.onload = e => {
-                    document.getElementById('foto-vorschau').src = e.target.result;
-                    document.getElementById('foto-vorschau-container').classList.remove('hidden');
-                    document.getElementById('foto-text').classList.add('hidden');
-                }
-                reader.readAsDataURL(selectedFile);
-            }
-        }
-
-        function entferneFoto() {
-            selectedFile = null; document.getElementById('foto-input').value = '';
-            document.getElementById('foto-vorschau-container').classList.add('hidden');
-            document.getElementById('foto-text').classList.remove('hidden');
-        }
-
-        async function senden(typ) {
-            if(!currentS) { showPopup(); return; }
-            const nachricht = document.getElementById('gast-nachricht').value;
-            let fotoUrl = null;
-
-            document.getElementById('main-ui').classList.add('hidden');
-            document.getElementById('success-ui').classList.remove('hidden');
-            document.getElementById('uploading-ui').classList.remove('hidden');
-
-            try {
-                if (selectedFile) {
-                    const fileName = `${Date.now()}_${selectedFile.name}`;
-                    await _supabase.storage.from('reparatur-fotos').upload(fileName, selectedFile);
-                    const { data: publicUrlData } = _supabase.storage.from('reparatur-fotos').getPublicUrl(fileName);
-                    fotoUrl = publicUrlData.publicUrl;
-                }
-                const combinedFloor = `${currentE} | ${currentB} | ${currentG}`;
-                await _supabase.from('meldungen').insert([{ typ, standort: currentS, etage: combinedFloor, nachricht, foto_url: fotoUrl, status: 'offen' }]);
-
-                document.getElementById('uploading-ui').classList.add('hidden');
-                document.getElementById('status-icon').classList.remove('hidden');
-                document.getElementById('done-ui').classList.remove('hidden');
-                document.getElementById('success-location').innerText = `${currentS}, ${combinedFloor}`;
-
-                setTimeout(() => { document.getElementById('progress-bar').style.width = '100%'; }, 50);
-                setTimeout(() => {
-                    document.getElementById('main-ui').classList.remove('hidden');
-                    document.getElementById('success-ui').classList.add('hidden');
-                    document.getElementById('progress-bar').style.width = '0%';
-                    document.getElementById('gast-nachricht').value = '';
-                    entferneFoto();
-                    checkStatus();
-                }, 3000);
-            } catch (err) {
-                alert("Fehler!");
-                document.getElementById('main-ui').classList.remove('hidden');
-                document.getElementById('success-ui').classList.add('hidden');
-            }
-        }
-    </script>
-</body>
-</html>
+        function findeOrt(id) {
+            for (const [standort, cfg] of Object.entries(STANDORTE)) {
+                if (!cfg.aktiv) continue;
+                for (const [etage, bereiche] of Object.entries(cfg.etagen)) {
+                    for (const bereich of bereiche) {
+                        for (const wc of WC_TYPEN) {
+                            if (slug(`${standort} ${etage} ${bereich} ${wc}`) === id) return { standort, etage, bereich, wc };
+                        }
