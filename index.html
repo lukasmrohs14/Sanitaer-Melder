@@ -122,3 +122,94 @@
                         for (const wc of WC_TYPEN) {
                             if (slug(`${standort} ${etage} ${bereich} ${wc}`) === id) return { standort, etage, bereich, wc };
                         }
+                    }
+                }
+            }
+            return null;
+        }
+
+        const ort = findeOrt(new URLSearchParams(window.location.search).get('ort') || '');
+        let sendetGerade = false;
+
+        // Gleiches Format wie bisher in der Spalte "etage", damit Admin und Auswertung weiter passen
+        function etageText() { return `${ort.etage} | ${ort.bereich} | ${ort.wc}`; }
+
+        function init() {
+            if (!ort) {
+                document.getElementById('current-location-label').innerText = 'Kein gültiger Ort';
+                document.getElementById('error-ui').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('current-location-label').innerText = `${ort.standort} | ${ort.etage}`;
+            document.getElementById('current-area-label').innerText = `${ort.bereich} (${ort.wc})`;
+            document.getElementById('main-ui').classList.remove('hidden');
+            checkStatus();
+        }
+
+        async function checkStatus() {
+            KATEGORIEN.forEach(t => {
+                const btn = document.getElementById('btn-' + t);
+                btn.classList.remove('disabled-btn');
+                btn.querySelector('.status-text').innerText = "Verfügbar";
+            });
+            const { data, error } = await _supabase.from('meldungen')
+                .select('typ')
+                .eq('standort', ort.standort)
+                .eq('etage', etageText())
+                .eq('status', 'offen');
+            if (error || !data) return;
+            data.forEach(m => markiereGemeldet(m.typ));
+        }
+
+        function markiereGemeldet(typ) {
+            const btn = document.getElementById('btn-' + typ);
+            if (btn) { btn.classList.add('disabled-btn'); btn.querySelector('.status-text').innerText = "Bereits gemeldet"; }
+        }
+
+        async function senden(typ) {
+            if (!ort || sendetGerade || !KATEGORIEN.includes(typ)) return;
+            if (document.getElementById('btn-' + typ).classList.contains('disabled-btn')) return;
+            sendetGerade = true;
+
+            document.getElementById('main-ui').classList.add('hidden');
+            document.getElementById('success-ui').classList.remove('hidden');
+            document.getElementById('status-icon').classList.add('hidden');
+            document.getElementById('done-ui').classList.add('hidden');
+            document.getElementById('uploading-ui').classList.remove('hidden');
+
+            const { error } = await _supabase.from('meldungen').insert([{
+                typ, standort: ort.standort, etage: etageText(), status: 'offen'
+            }]);
+
+            // 23505 = jemand hat dieselbe Kategorie gerade schon gemeldet (eindeutiger Index) -> gilt als erledigt
+            if (error && error.code !== '23505') {
+                alert("Die Meldung konnte nicht gesendet werden. Bitte erneut versuchen.");
+                document.getElementById('success-ui').classList.add('hidden');
+                document.getElementById('main-ui').classList.remove('hidden');
+                sendetGerade = false;
+                return;
+            }
+
+            markiereGemeldet(typ);
+            document.getElementById('uploading-ui').classList.add('hidden');
+            document.getElementById('status-icon').classList.remove('hidden');
+            document.getElementById('done-ui').classList.remove('hidden');
+            document.getElementById('success-location').innerText = `${ort.standort}, ${etageText()}`;
+
+            setTimeout(() => { document.getElementById('progress-bar').style.width = '100%'; }, 50);
+            setTimeout(() => {
+                document.getElementById('main-ui').classList.remove('hidden');
+                document.getElementById('success-ui').classList.add('hidden');
+                document.getElementById('progress-bar').style.width = '0%';
+                sendetGerade = false;
+                checkStatus();
+            }, 3000);
+        }
+
+        // Status aktualisieren, wenn die Seite wieder in den Vordergrund kommt
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && ort && !sendetGerade) checkStatus(); });
+
+        init();
+    </script>
+</body>
+</html>
