@@ -10,45 +10,50 @@
         .text-firma-green { color: #006959; }
         .bg-firma-green { background-color: #006959; }
         .bg-firma-yellow { background-color: #F4B827; }
-        
+
         /* Status-Indikatoren an der Seite der Aufgaben */
         .status-green { border-left-color: #10b981 !important; border-left-width: 6px !important; }
         .status-orange { border-left-color: #f59e0b !important; border-left-width: 6px !important; }
         .status-red { border-left-color: #dc2626 !important; border-left-width: 6px !important; }
-        
+
         /* Der blinkende Punkt für neue Meldungen */
         .indicator-dot { animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
-        
+
         .fade-in { animation: fadeIn 0.2s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        
+
         .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 min-h-screen pb-10 antialiased">
 
-    <!-- Login Sektion -->
-    <div id="login-section" class="max-w-md mx-auto mt-20 p-8 bg-white rounded-[2.5rem] shadow-2xl text-center border border-gray-100 relative overflow-hidden">
+    <!-- Login: Benutzername + Passwort (ein Konto pro Person) -->
+    <div id="login-section" class="hidden max-w-md mx-auto mt-20 p-8 bg-white rounded-[2.5rem] shadow-2xl text-center border border-gray-100 relative overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-1.5 bg-firma-yellow"></div>
         <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" class="h-10 mx-auto mb-6 mt-2">
-        <input type="password" id="pin" placeholder="PIN" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-center text-3xl outline-none focus:border-firma-yellow mb-4 shadow-inner">
-        <button onclick="checkPin()" class="w-full bg-firma-yellow text-white p-4 rounded-2xl font-black uppercase shadow-lg">Einloggen</button>
+        <form onsubmit="login(event)" class="space-y-3">
+            <input type="text" id="login-user" placeholder="Benutzername" autocomplete="username" autocapitalize="none" spellcheck="false"
+                   class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-center font-bold outline-none focus:border-firma-yellow shadow-inner">
+            <input type="password" id="login-pass" placeholder="Passwort" autocomplete="current-password"
+                   class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-center font-bold outline-none focus:border-firma-yellow shadow-inner">
+            <p id="login-error" class="hidden text-red-500 text-[11px] font-bold uppercase"></p>
+            <button id="login-btn" type="submit" class="w-full bg-firma-yellow text-white p-4 rounded-2xl font-black uppercase shadow-lg">Einloggen</button>
+        </form>
     </div>
 
     <!-- Admin Haupt-Content -->
     <div id="admin-content" class="hidden max-w-4xl mx-auto p-4 space-y-6">
-        
-        <!-- Header mit User-Wahl -->
+
+        <!-- Header mit angemeldetem Benutzer -->
         <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-6 rounded-[2rem] shadow-sm relative overflow-hidden border border-gray-100">
             <div class="absolute top-0 left-0 w-full h-1.5 bg-firma-yellow"></div>
             <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" class="h-8 mt-2">
-            <div class="flex items-center gap-3">
-                <select id="admin-name-select" class="bg-gray-50 border-none rounded-xl p-3 font-bold text-firma-green uppercase text-xs outline-none shadow-inner">
-                    <option value="Felix">👤 Felix</option>
-                    <option value="Birgit">👤 Birgit</option>
-                </select>
+            <div class="flex flex-wrap items-center justify-center gap-2">
+                <span id="user-label" class="bg-gray-50 rounded-xl px-3 py-2 font-bold text-firma-green uppercase text-xs shadow-inner"></span>
                 <button onclick="loadData()" class="bg-gray-100 text-gray-500 px-4 py-2 rounded-xl font-bold text-[10px] uppercase hover:bg-gray-200 transition-colors">🔄 Refresh</button>
+                <a href="stats.html" class="bg-gray-100 text-gray-500 px-4 py-2 rounded-xl font-bold text-[10px] uppercase hover:bg-gray-200 transition-colors">📊 Auswertung</a>
+                <button onclick="logout()" class="bg-gray-800 text-white px-4 py-2 rounded-xl font-bold text-[10px] uppercase shadow-md">Abmelden</button>
             </div>
         </div>
 
@@ -60,9 +65,8 @@
                     🌐 Alle anzeigen
                 </button>
             </div>
-            
-            <!-- Standort-Grid (LZW, HVS, etc.) -->
-            <div id="radar-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4"></div>
+
+            <div id="radar-grid" class="grid gap-3 mb-4"></div>
 
             <!-- Etagen-Auswahl (Erscheint bei Standort-Klick) -->
             <div id="floor-container" class="hidden fade-in bg-white/50 p-3 rounded-[2rem] border border-dashed border-gray-300">
@@ -75,10 +79,11 @@
         <section>
             <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-2">2. Themen-Filter</h2>
             <div id="type-filter" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                <button onclick="setFilter('all')" class="filter-btn border-firma-yellow whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent transition-all">ALLE</button>
-                <button onclick="setFilter('Seife')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent transition-all">🧼 Seife</button>
-                <button onclick="setFilter('Klopapier')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent transition-all">🧻 Klopapier</button>
-                <button onclick="setFilter('Handtücher')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent transition-all">🖐️ Handtücher</button>
+                <button data-typ="all" onclick="setFilter('all')" class="filter-btn border-firma-yellow whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent transition-all">ALLE</button>
+                <button data-typ="Seife" onclick="setFilter('Seife')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent transition-all">🧼 Seife</button>
+                <button data-typ="Klopapier" onclick="setFilter('Klopapier')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent transition-all">🧻 Klopapier</button>
+                <button data-typ="Handtücher" onclick="setFilter('Handtücher')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent transition-all">🖐️ Handtücher</button>
+                <button data-typ="Defekt" onclick="setFilter('Defekt')" class="filter-btn whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-sm bg-white text-gray-400 border-2 border-transparent transition-all">🔧 Defekt</button>
             </div>
         </section>
 
@@ -94,47 +99,121 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const config = {
-            "HVS": ["EG", "1. OG"],
-            "LZW": ["EG", "1. OG", "2. OG"],
-            "LZS": ["EG", "1. OG", "2. OG"],
-            "LZO": ["EG", "1. OG", "2. OG"]
+        // Benutzername "felix" wird intern zu "felix@meldeportal.local" (Supabase Auth braucht eine E-Mail-Form)
+        const LOGIN_DOMAIN = 'meldeportal.local';
+
+        // Standorte: deaktivierte bleiben in der Konfiguration, werden aber ausgeblendet
+        const STANDORTE = {
+            "HVS": { aktiv: true,  etagen: ["EG", "1. OG"] },
+            "LZW": { aktiv: false, etagen: ["EG", "1. OG", "2. OG"] },
+            "LZO": { aktiv: false, etagen: ["EG", "1. OG", "2. OG"] },
+            "LZS": { aktiv: false, etagen: ["EG", "1. OG", "2. OG"] }
         };
+        const AKTIVE_STANDORTE = Object.keys(STANDORTE).filter(s => STANDORTE[s].aktiv);
 
         let allMeldungen = [];
         let currentFilterType = 'all';
         let currentFilterLocation = 'all';
         let currentFilterFloor = 'all';
+        let aktuellerBenutzer = null;
+        let realtimeChannel = null;
+        let minutenTimer = null;
 
-        // PIN Check
-        async function checkPin() {
-            const eingabe = document.getElementById('pin').value;
-            const { data: isValid } = await _supabase.rpc('check_admin_pin', { input_pin: eingabe });
-            if (isValid) {
-                document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('admin-content').classList.remove('hidden');
-                loadData();
-                initRealtime();
-            } else { alert("Falsche PIN!"); }
+        // ---------- Hilfsfunktionen ----------
+        function escapeHtml(text) {
+            return String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         }
 
+        function zuEmail(benutzer) {
+            return benutzer.includes('@') ? benutzer : `${benutzer}@${LOGIN_DOMAIN}`;
+        }
+
+        function benutzerName(user) {
+            return (user?.email || '').split('@')[0];
+        }
+
+        // ---------- Anmeldung ----------
+        async function login(event) {
+            event.preventDefault();
+            const benutzer = document.getElementById('login-user').value.trim().toLowerCase();
+            const passwort = document.getElementById('login-pass').value;
+            const fehler = document.getElementById('login-error');
+            const btn = document.getElementById('login-btn');
+            fehler.classList.add('hidden');
+
+            if (!benutzer || !passwort) {
+                fehler.innerText = 'Bitte Benutzername und Passwort eingeben';
+                fehler.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true; btn.innerText = '⌛';
+            const { error } = await _supabase.auth.signInWithPassword({ email: zuEmail(benutzer), password: passwort });
+            btn.disabled = false; btn.innerText = 'Einloggen';
+
+            if (error) {
+                fehler.innerText = 'Benutzername oder Passwort falsch';
+                fehler.classList.remove('hidden');
+                document.getElementById('login-pass').value = '';
+            }
+        }
+
+        async function logout() {
+            await _supabase.auth.signOut();
+        }
+
+        function zeigeLogin() {
+            aktuellerBenutzer = null;
+            if (realtimeChannel) { _supabase.removeChannel(realtimeChannel); realtimeChannel = null; }
+            if (minutenTimer) { clearInterval(minutenTimer); minutenTimer = null; }
+            allMeldungen = [];
+            document.getElementById('liste').innerHTML = '';
+            document.getElementById('admin-content').classList.add('hidden');
+            document.getElementById('login-section').classList.remove('hidden');
+        }
+
+        function zeigeAdmin(user) {
+            const schonAngemeldet = aktuellerBenutzer === benutzerName(user);
+            aktuellerBenutzer = benutzerName(user);
+            if (schonAngemeldet) return; // z. B. bei Token-Erneuerung nichts neu aufbauen
+
+            document.getElementById('user-label').innerText = `👤 ${aktuellerBenutzer}`;
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('admin-content').classList.remove('hidden');
+            document.getElementById('login-pass').value = '';
+            loadData();
+            initRealtime();
+            minutenTimer = setInterval(renderList, 60000); // Minuten-Anzeige aktuell halten
+        }
+
+        // Reagiert auf Login, Logout und eine noch gültige Sitzung beim Laden der Seite
+        _supabase.auth.onAuthStateChange((event, session) => {
+            setTimeout(() => { session ? zeigeAdmin(session.user) : zeigeLogin(); }, 0);
+        });
+
+        // ---------- Daten ----------
         async function loadData() {
-            const { data } = await _supabase.from('meldungen').select('*').eq('status', 'offen').order('created_at', { ascending: true });
+            const { data, error } = await _supabase.from('meldungen')
+                .select('*')
+                .eq('status', 'offen')
+                .in('standort', AKTIVE_STANDORTE)
+                .order('created_at', { ascending: true });
+            if (error) { console.error(error); return; }
             allMeldungen = data || [];
             renderRadar();
             renderList();
         }
 
-        // Zeichnet die 4 Standort-Buttons
+        // Zeichnet die Buttons der aktiven Standorte
         function renderRadar() {
-            const locations = ['LZW', 'HVS', 'LZO', 'LZS'];
             const grid = document.getElementById('radar-grid');
+            grid.className = `grid gap-3 mb-4 ${AKTIVE_STANDORTE.length === 1 ? 'grid-cols-1' : 'grid-cols-2 md:grid-cols-4'}`;
             grid.innerHTML = '';
-            
-            locations.forEach(loc => {
+
+            AKTIVE_STANDORTE.forEach(loc => {
                 const count = allMeldungen.filter(m => m.standort === loc).length;
                 const activeStyle = currentFilterLocation === loc ? 'border-firma-yellow ring-4 ring-firma-yellow/20 bg-gray-50' : 'border-transparent bg-white shadow-sm';
-                
+
                 grid.innerHTML += `
                     <button onclick="setLocationFilter('${loc}')" class="p-5 rounded-[2rem] border-2 ${activeStyle} transition-all relative flex flex-col items-center">
                         ${count > 0 ? `<span class="absolute top-4 right-4 w-3 h-3 bg-red-500 rounded-full indicator-dot shadow-lg"></span>` : ''}
@@ -149,7 +228,7 @@
         function renderFloorBar() {
             const container = document.getElementById('floor-container');
             const grid = document.getElementById('floor-grid');
-            
+
             if (currentFilterLocation === 'all') {
                 container.classList.add('hidden');
                 return;
@@ -157,10 +236,10 @@
 
             container.classList.remove('hidden');
             grid.innerHTML = '';
-            
-            const floors = config[currentFilterLocation] || [];
+
+            const floors = STANDORTE[currentFilterLocation]?.etagen || [];
             floors.forEach(floor => {
-                const hasIssue = allMeldungen.some(m => m.standort === currentFilterLocation && m.etage.startsWith(floor));
+                const hasIssue = allMeldungen.some(m => m.standort === currentFilterLocation && (m.etage || '').startsWith(floor));
                 const isSelected = currentFilterFloor === floor;
 
                 grid.innerHTML += `
@@ -184,38 +263,28 @@
             renderList();
         }
 
-        // WICHTIG: Die gefixte Reset-Funktion
         function resetAllFilters() {
-            currentFilterType = 'all';
             currentFilterLocation = 'all';
             currentFilterFloor = 'all';
-            
-            // UI Resets
-            document.getElementById('floor-container').classList.add('hidden');
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.toggle('border-firma-yellow', btn.innerText === 'ALLE');
-            });
-
+            setFilter('all');
             renderRadar();
-            renderList();
         }
 
         function setFilter(type) {
             currentFilterType = type;
-            renderList();
             document.querySelectorAll('.filter-btn').forEach(btn => {
-                const isSelected = (type === 'all' && btn.innerText === 'ALLE') || btn.innerText.includes(type);
-                btn.classList.toggle('border-firma-yellow', isSelected);
+                btn.classList.toggle('border-firma-yellow', btn.dataset.typ === type);
             });
+            renderList();
         }
 
         function renderList() {
             const liste = document.getElementById('liste');
             let filtered = allMeldungen;
-            
+
             if (currentFilterType !== 'all') filtered = filtered.filter(m => m.typ === currentFilterType);
             if (currentFilterLocation !== 'all') filtered = filtered.filter(m => m.standort === currentFilterLocation);
-            if (currentFilterFloor !== 'all') filtered = filtered.filter(m => m.etage.startsWith(currentFilterFloor));
+            if (currentFilterFloor !== 'all') filtered = filtered.filter(m => (m.etage || '').startsWith(currentFilterFloor));
 
             liste.innerHTML = '';
             if (filtered.length === 0) {
@@ -227,20 +296,22 @@
                 const diffMin = Math.floor((new Date() - new Date(m.created_at)) / 60000);
                 let statusClass = 'status-green';
                 let timeTextClass = 'text-emerald-600 font-bold';
-                
+
                 if (diffMin >= 60) { statusClass = 'status-red'; timeTextClass = 'text-red-600 font-black'; }
                 else if (diffMin >= 20) { statusClass = 'status-orange'; timeTextClass = 'text-amber-500 font-black'; }
 
+                const id = escapeHtml(m.id);
                 liste.innerHTML += `
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 ${statusClass} flex items-center justify-between gap-4 fade-in">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 ${statusClass} flex items-center justify-between gap-3 fade-in">
                         <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="bg-gray-50 text-gray-500 text-[8px] px-2.5 py-1 rounded font-black uppercase tracking-wider border border-gray-100">${m.standort} | ${m.etage}</span>
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                <span class="bg-gray-50 text-gray-500 text-[8px] px-2.5 py-1 rounded font-black uppercase tracking-wider border border-gray-100">${escapeHtml(m.standort)} | ${escapeHtml(m.etage)}</span>
                                 <span class="text-[8px] uppercase ${timeTextClass}">${diffMin} Min</span>
                             </div>
-                            <p class="font-black text-gray-700 text-sm uppercase truncate tracking-tight">${m.typ}</p>
+                            <p class="font-black text-gray-700 text-sm uppercase truncate tracking-tight">${escapeHtml(m.typ)}</p>
                         </div>
-                        <button onclick="erledigen(this, '${m.id}')" class="bg-firma-yellow text-white w-12 h-12 rounded-2xl flex items-center justify-center font-bold shadow-md active:scale-90 transition-all text-xl">✓</button>
+                        <button onclick="loeschen(this, '${id}')" title="Meldung löschen" class="bg-red-50 text-red-500 w-12 h-12 rounded-2xl flex items-center justify-center font-bold active:scale-90 transition-all text-lg">🗑</button>
+                        <button onclick="erledigen(this, '${id}')" title="Als erledigt markieren" class="bg-firma-yellow text-white w-12 h-12 rounded-2xl flex items-center justify-center font-bold shadow-md active:scale-90 transition-all text-xl">✓</button>
                     </div>`;
             });
         }
@@ -248,21 +319,39 @@
         async function erledigen(btn, id) {
             btn.innerHTML = "⌛";
             btn.disabled = true;
-            const name = document.getElementById('admin-name-select').value;
-            await _supabase.from('meldungen').update({ 
-                status: 'erledigt', 
-                erledigt_von: name, 
-                erledigt_am: new Date().toISOString() 
-            }).eq('id', id);
+            const { data, error } = await _supabase.from('meldungen').update({
+                status: 'erledigt',
+                erledigt_von: aktuellerBenutzer,
+                erledigt_am: new Date().toISOString()
+            }).eq('id', id).select('id');
+
+            if (error || !data || data.length === 0) {
+                alert("Die Meldung konnte nicht als erledigt markiert werden.");
+            }
+            setTimeout(() => loadData(), 300);
+        }
+
+        async function loeschen(btn, id) {
+            const m = allMeldungen.find(x => String(x.id) === String(id));
+            const beschreibung = m ? `"${m.typ}" (${m.standort} | ${m.etage})` : 'diese Meldung';
+            if (!confirm(`Meldung ${beschreibung} wirklich löschen?\n\nDas kann nicht rückgängig gemacht werden.`)) return;
+
+            btn.innerHTML = "⌛";
+            btn.disabled = true;
+            const { data, error } = await _supabase.from('meldungen').delete().eq('id', id).select('id');
+
+            if (error || !data || data.length === 0) {
+                alert("Die Meldung konnte nicht gelöscht werden.");
+            }
             setTimeout(() => loadData(), 300);
         }
 
         function initRealtime() {
-            _supabase.channel('admin').on('postgres_changes', { event: '*', schema: 'public', table: 'meldungen' }, () => loadData()).subscribe();
+            if (realtimeChannel) return;
+            realtimeChannel = _supabase.channel('admin')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'meldungen' }, () => loadData())
+                .subscribe();
         }
-
-        // PIN mit Enter bestätigen
-        document.getElementById('pin').addEventListener('keypress', (e) => { if (e.key === 'Enter') checkPin(); });
     </script>
 </body>
 </html>
