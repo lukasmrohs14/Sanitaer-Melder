@@ -19,13 +19,14 @@
 </head>
 <body class="bg-gray-50 p-4 md:p-8 antialiased">
 
-    <div class="max-w-6xl mx-auto space-y-6">
+    <!-- Inhalt erst nach erfolgreicher Anmeldung sichtbar -->
+    <div id="stats-content" class="hidden max-w-6xl mx-auto space-y-6">
         <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border-b-8 border-firma-yellow fade-in flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4">
                 <img src="VL_Logo_2022_08176_Voigt_Logistik_CMYK_2022-07-15_AS.png" alt="Logo" class="h-8 object-contain">
                 <div>
                     <h1 class="text-firma-green font-black uppercase tracking-widest text-xl">Muster-Analyse</h1>
-                    <p class="text-gray-400 text-[10px] font-bold uppercase">Logistik-Monitoring</p>
+                    <p id="subtitle" class="text-gray-400 text-[10px] font-bold uppercase">Logistik-Monitoring</p>
                 </div>
             </div>
             <div class="flex flex-wrap justify-center gap-2">
@@ -34,7 +35,7 @@
                     <option value="30" selected>Letzte 30 Tage</option>
                     <option value="7">Letzte 7 Tage</option>
                 </select>
-                <button onclick="exportToCSV()" class="bg-firma-green text-white px-5 py-2 rounded-xl font-bold text-[10px] uppercase shadow-md">Export</button>
+                <button onclick="exportToCSV()" title="Export enthält nur Summen je Ort und Kategorie" class="bg-firma-green text-white px-5 py-2 rounded-xl font-bold text-[10px] uppercase shadow-md">Export (Summen)</button>
                 <a href="admin.html" class="bg-gray-800 text-white px-5 py-2 rounded-xl font-bold text-[10px] uppercase shadow-md">Zurück</a>
             </div>
         </div>
@@ -42,7 +43,7 @@
         <div id="prediction-banner" class="hidden fade-in bg-white p-5 rounded-[2rem] glow-border flex items-center gap-4">
             <div class="bg-firma-yellow p-3 rounded-2xl text-xl">💡</div>
             <div>
-                <h3 class="text-firma-green font-black uppercase text-xs tracking-wider">KI-Bedarfs-Prognose</h3>
+                <h3 class="text-firma-green font-black uppercase text-xs tracking-wider">Bedarfs-Hinweis</h3>
                 <p id="prediction-text" class="text-[11px] text-gray-600 font-bold italic mt-1"></p>
             </div>
         </div>
@@ -53,7 +54,7 @@
                 <p id="stat-total" class="text-2xl font-black text-firma-green">--</p>
             </div>
             <div class="bg-white p-5 rounded-[2rem] shadow-sm border-l-4 border-firma-yellow text-center">
-                <p class="text-[9px] font-black text-gray-400 uppercase">Häufigster Typ</p>
+                <p class="text-[9px] font-black text-gray-400 uppercase">Häufigste Kategorie</p>
                 <p id="stat-top" class="text-[11px] font-black text-firma-green uppercase truncate px-2">--</p>
             </div>
             <div class="bg-white p-5 rounded-[2rem] shadow-sm border-l-4 border-blue-500 text-center">
@@ -61,7 +62,7 @@
                 <p id="stat-ratio" class="text-2xl font-black text-firma-green">--</p>
             </div>
             <div class="bg-white p-5 rounded-[2rem] shadow-sm border-l-4 border-red-500 text-center">
-                <p class="text-[9px] font-black text-gray-400 uppercase">Top Standort</p>
+                <p class="text-[9px] font-black text-gray-400 uppercase">Top Ort</p>
                 <p id="stat-top-loc" class="text-[11px] font-black text-red-600 uppercase">--</p>
             </div>
         </div>
@@ -73,7 +74,7 @@
                 <div class="h-[250px]"><canvas id="hourChart"></canvas></div>
             </div>
             <div class="bg-white p-6 rounded-[2.5rem] shadow-lg">
-                <h2 class="text-firma-green font-black uppercase text-[11px]">📍 Standort-Vergleich</h2>
+                <h2 class="text-firma-green font-black uppercase text-[11px]">📍 Orte-Vergleich</h2>
                 <p id="info-loc" class="text-[9px] text-gray-400 font-bold mb-4 uppercase">Trend: Lade Analyse...</p>
                 <div class="h-[250px]"><canvas id="locChart"></canvas></div>
             </div>
@@ -83,9 +84,9 @@
                 <div class="h-[250px]"><canvas id="weekdayChart"></canvas></div>
             </div>
             <div class="bg-white p-6 rounded-[2.5rem] shadow-lg">
-                <h2 class="text-firma-green font-black uppercase text-[11px] text-center">📦 Material-Verteilung</h2>
+                <h2 class="text-firma-green font-black uppercase text-[11px] text-center">📦 Kategorie-Verteilung</h2>
                 <p id="info-type" class="text-[9px] text-gray-400 font-bold mb-4 uppercase text-center">Trend: Lade Analyse...</p>
-                <div class="max-w-[180px] mx-auto"><canvas id="typeChart"></canvas></div>
+                <div class="max-w-[220px] mx-auto"><canvas id="typeChart"></canvas></div>
             </div>
         </div>
     </div>
@@ -95,92 +96,123 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtocHRpdnN2am5nb2ljcGtuZWNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDUyMDQsImV4cCI6MjA5MDUyMTIwNH0.dAQK6usd7M-xY0rBwVHVT4ApDgQ93eOD6sa_0rQ53ZE';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // Gleiche Kategorien wie auf der Meldeseite
+        const KATEGORIEN = ['Seife', 'Klopapier', 'Handtücher', 'Defekt'];
+
+        // Deaktivierte Standorte bleiben in der Konfiguration, fließen aber nicht in die Auswertung ein
+        const STANDORTE = { "HVS": true, "LZW": false, "LZS": false, "LZO": false };
+        const AKTIVE_STANDORTE = Object.keys(STANDORTE).filter(s => STANDORTE[s]);
+
         let charts = {};
+        let aktuelleDaten = [];
+        let aktuellerZeitraum = { von: null, bis: null };
         const weekdaysMap = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+
+        // Alte Meldungen "Sonstiges" (früheres Freitextfeld) zählen als Defekt
+        function kategorie(typ) {
+            if (KATEGORIEN.includes(typ)) return typ;
+            if (typ === 'Sonstiges') return 'Defekt';
+            return null;
+        }
+
+        // Ort ohne Standort, z. B. "EG | Toilette Dispo | Damen"
+        function ortName(m) { return m.etage || 'Unbekannt'; }
+
+        async function start() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { window.location.href = 'admin.html'; return; }
+            document.getElementById('subtitle').innerText = `Logistik-Monitoring · ${AKTIVE_STANDORTE.join(', ')}`;
+            document.getElementById('stats-content').classList.remove('hidden');
+            initStats();
+        }
 
         async function initStats() {
             const daysFilter = document.getElementById('time-filter').value;
-            let { data, error } = await _supabase.from('meldungen').select('*').order('created_at', { ascending: false });
-            if (error) return;
+            let query = _supabase.from('meldungen')
+                .select('typ, standort, etage, status, created_at, erledigt_am')
+                .in('standort', AKTIVE_STANDORTE)
+                .order('created_at', { ascending: false });
 
+            let von = null;
             if (daysFilter !== 'all') {
-                const limit = new Date();
-                limit.setDate(limit.getDate() - parseInt(daysFilter));
-                data = data.filter(m => new Date(m.created_at) >= limit);
+                von = new Date();
+                von.setDate(von.getDate() - parseInt(daysFilter));
+                query = query.gte('created_at', von.toISOString());
             }
 
-            // Datenstrukturen
+            const { data, error } = await query;
+            if (error) { console.error(error); return; }
+
+            // Nur die festen Kategorien zählen
+            aktuelleDaten = (data || []).filter(m => kategorie(m.typ));
+            const aeltesteMeldung = aktuelleDaten.length ? new Date(aktuelleDaten[aktuelleDaten.length - 1].created_at) : null;
+            aktuellerZeitraum = { von: von || aeltesteMeldung, bis: new Date() };
+
             const stats = {
                 hours: new Array(24).fill(0),
                 durations: new Array(24).fill(0),
                 hourDone: new Array(24).fill(0),
                 days: new Array(7).fill(0),
                 locs: {},
-                types: { "Klopapier": 0, "Seife": 0, "Handtücher": 0, "Defekt": 0 },
+                types: Object.fromEntries(KATEGORIEN.map(k => [k, 0])),
                 done: 0
             };
 
-            data.forEach(m => {
+            aktuelleDaten.forEach(m => {
                 const date = new Date(m.created_at);
                 const h = date.getHours();
-                const d = date.getDay();
-                
-                // Standort bereinigen
-                if(m.standort && m.standort.toLowerCase() !== 'null') {
-                    stats.locs[m.standort] = (stats.locs[m.standort] || 0) + 1;
-                }
 
-                // Typ bereinigen
-                let t = (m.typ || "").toLowerCase();
-                let cleanT = "";
-                if (t.includes("papier")) cleanT = "Klopapier";
-                else if (t.includes("seife")) cleanT = "Seife";
-                else if (t.includes("handtuch")) cleanT = "Handtücher";
-                else if (t.includes("defekt")) cleanT = "Defekt";
-                
-                if(cleanT) {
-                    stats.types[cleanT]++;
-                    stats.hours[h]++;
-                    stats.days[d]++;
-                    if(m.status === 'erledigt') {
-                        stats.done++;
-                        if(m.erledigt_am) {
-                            const dur = (new Date(m.erledigt_am) - date) / 60000;
-                            if(dur > 0) { stats.durations[h] += dur; stats.hourDone[h]++; }
-                        }
+                stats.types[kategorie(m.typ)]++;
+                stats.locs[ortName(m)] = (stats.locs[ortName(m)] || 0) + 1;
+                stats.hours[h]++;
+                stats.days[date.getDay()]++;
+
+                if (m.status === 'erledigt') {
+                    stats.done++;
+                    if (m.erledigt_am) {
+                        const dur = (new Date(m.erledigt_am) - date) / 60000;
+                        if (dur > 0) { stats.durations[h] += dur; stats.hourDone[h]++; }
                     }
                 }
             });
 
-            renderDashboard(data.length, stats, daysFilter);
+            renderDashboard(aktuelleDaten.length, stats, daysFilter);
         }
 
         function renderDashboard(total, s, filter) {
-            const avgDurs = s.durations.map((v, i) => s.hourDone[i] > 0 ? Math.round(v/s.hourDone[i]) : 0);
-            
-            // Cards
-            document.getElementById('stat-total').innerText = total;
-            document.getElementById('stat-ratio').innerText = total > 0 ? Math.round((s.done/total)*100) + "%" : "0%";
-            const topT = Object.entries(s.types).sort((a,b) => b[1]-a[1])[0];
-            document.getElementById('stat-top').innerText = topT[1] > 0 ? topT[0] : "--";
-            const topL = Object.entries(s.locs).sort((a,b) => b[1]-a[1])[0];
-            document.getElementById('stat-top-loc').innerText = topL ? topL[0] : "--";
-
-            // Trend Texte
+            const avgDurs = s.durations.map((v, i) => s.hourDone[i] > 0 ? Math.round(v / s.hourDone[i]) : 0);
             const timeLabel = filter === 'all' ? "Gesamt" : filter + " Tage";
+            const banner = document.getElementById('prediction-banner');
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-ratio').innerText = total > 0 ? Math.round((s.done / total) * 100) + "%" : "0%";
+
+            if (total === 0) {
+                ['stat-top', 'stat-top-loc'].forEach(id => document.getElementById(id).innerText = '--');
+                ['info-hour', 'info-weekday', 'info-loc', 'info-type'].forEach(id => document.getElementById(id).innerText = `Trend (${timeLabel}): Keine Daten`);
+                banner.classList.add('hidden');
+                updateCharts(s, avgDurs);
+                return;
+            }
+
+            const topT = Object.entries(s.types).sort((a, b) => b[1] - a[1])[0];
+            const topL = Object.entries(s.locs).sort((a, b) => b[1] - a[1])[0];
             const maxDayIdx = s.days.indexOf(Math.max(...s.days));
             const maxHour = s.hours.indexOf(Math.max(...s.hours));
-            
+
+            document.getElementById('stat-top').innerText = topT[0];
+            document.getElementById('stat-top-loc').innerText = topL[0];
             document.getElementById('info-hour').innerText = `Trend (${timeLabel}): Peak um ${maxHour}:00 Uhr`;
             document.getElementById('info-weekday').innerText = `Trend (${timeLabel}): Höchste Belastung am ${weekdaysMap[maxDayIdx]}`;
-            document.getElementById('info-loc').innerText = `Trend (${timeLabel}): ${topL ? topL[0] : 'Keine Daten'} ist Hauptfokus`;
-            document.getElementById('info-type').innerText = `Trend (${timeLabel}): ${topT[0]} meistgefragt`;
+            document.getElementById('info-loc').innerText = `Trend (${timeLabel}): ${topL[0]} ist Hauptfokus`;
+            document.getElementById('info-type').innerText = `Trend (${timeLabel}): ${topT[0]} am häufigsten`;
 
-            // Prognose
-            const banner = document.getElementById('prediction-banner');
-            if(s.days[maxDayIdx] > 3) {
+            // Hinweis: einfacher Wochentag-Vergleich, keine KI
+            if (s.days[maxDayIdx] > 3) {
                 banner.classList.remove('hidden');
-                document.getElementById('prediction-text').innerText = `Analyse zeigt: Am ${weekdaysMap[maxDayIdx]} treten überdurchschnittlich viele Meldungen auf. Ressourcen einplanen!`;
+                document.getElementById('prediction-text').innerText = `Am ${weekdaysMap[maxDayIdx]} gehen die meisten Meldungen ein. Ressourcen einplanen!`;
+            } else {
+                banner.classList.add('hidden');
             }
 
             updateCharts(s, avgDurs);
@@ -193,39 +225,64 @@
             charts.hours = new Chart(ctx('hourChart'), {
                 type: 'line',
                 data: {
-                    labels: Array.from({length: 24}, (_, i) => i + ':00'),
+                    labels: Array.from({ length: 24 }, (_, i) => i + ':00'),
                     datasets: [
                         { label: 'Anzahl', data: s.hours, borderColor: '#006959', backgroundColor: 'rgba(0,105,89,0.1)', fill: true, tension: 0.4, yAxisID: 'y' },
-                        { label: '∅ Min', data: avgDurs, borderColor: '#F4B827', borderDash: [5,5], tension: 0.4, yAxisID: 'y1' }
+                        { label: '∅ Min', data: avgDurs, borderColor: '#F4B827', borderDash: [5, 5], tension: 0.4, yAxisID: 'y1' }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: {beginAtZero: true}, y1: {position: 'right', beginAtZero: true} } }
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true }, y1: { position: 'right', beginAtZero: true } } }
             });
 
             charts.locs = new Chart(ctx('locChart'), {
                 type: 'bar',
                 data: { labels: Object.keys(s.locs), datasets: [{ data: Object.values(s.locs), backgroundColor: '#F4B827', borderRadius: 8 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: {display: false} } }
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
             });
 
             charts.week = new Chart(ctx('weekdayChart'), {
                 type: 'bar',
-                data: { labels: ['So','Mo','Di','Mi','Do','Fr','Sa'], datasets: [{ data: s.days, backgroundColor: '#006959', borderRadius: 8 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: {display: false} } }
+                data: { labels: ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'], datasets: [{ data: s.days, backgroundColor: '#006959', borderRadius: 8 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
 
             charts.types = new Chart(ctx('typeChart'), {
                 type: 'doughnut',
                 data: { labels: Object.keys(s.types), datasets: [{ data: Object.values(s.types), backgroundColor: ['#006959', '#F4B827', '#10b981', '#ef4444'] }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: {position: 'bottom'} } }
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
             });
         }
 
+        // Export nur mit Summen: Zeitraum, Standort, Ort, Kategorie, Anzahl (keine Einzelmeldungen)
         function exportToCSV() {
-            // ... (Bleibt wie gehabt)
+            if (aktuelleDaten.length === 0) { alert("Keine Daten im gewählten Zeitraum."); return; }
+
+            const summen = {};
+            aktuelleDaten.forEach(m => {
+                const key = JSON.stringify([m.standort, ortName(m), kategorie(m.typ)]);
+                summen[key] = (summen[key] || 0) + 1;
+            });
+
+            const datum = d => d ? d.toLocaleDateString('de-DE') : '';
+            const zeitraum = `${datum(aktuellerZeitraum.von)} - ${datum(aktuellerZeitraum.bis)}`;
+            const zelle = v => `"${String(v).replace(/"/g, '""')}"`;
+
+            const zeilen = [['Zeitraum', 'Standort', 'Ort', 'Kategorie', 'Anzahl']];
+            Object.entries(summen)
+                .map(([key, anzahl]) => [zeitraum, ...JSON.parse(key), anzahl])
+                .sort((a, b) => (a[1] + a[2] + a[3]).localeCompare(b[1] + b[2] + b[3]))
+                .forEach(z => zeilen.push(z));
+
+            const csv = '\uFEFF' + zeilen.map(z => z.map(zelle).join(';')).join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `meldungen_summen_${AKTIVE_STANDORTE.join('-')}_${new Date().toISOString().slice(0, 10)}.csv`;
+            link.click();
+            URL.revokeObjectURL(link.href);
         }
 
-        initStats();
+        start();
     </script>
 </body>
 </html>
