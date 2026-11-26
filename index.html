@@ -68,11 +68,12 @@
             </div>
         </div>
 
-        <!-- Fehler: QR-Code ohne gültigen Ort -->
-        <div id="error-ui" class="hidden p-10 text-center fade-in space-y-4 flex-grow flex flex-col justify-center">
-            <div class="mx-auto flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4 text-red-600 text-3xl">!</div>
-            <h2 class="font-black text-xl text-firma-green uppercase">Ort unbekannt</h2>
-            <p class="text-gray-600 font-bold text-sm">Bitte scannen Sie den QR-Code im Sanitärbereich erneut.</p>
+        <!-- Scan-Hinweis: erscheint kurz beim Aufrufen der Seite -->
+        <div id="scan-ui" class="hidden p-10 text-center fade-in space-y-4 flex-grow flex flex-col justify-center">
+            <div class="mx-auto flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4 text-green-600 text-3xl">✓</div>
+            <h2 id="scan-title" class="font-black text-xl text-firma-green uppercase">Code gescannt</h2>
+            <p id="scan-text" class="text-gray-600 font-bold text-sm"></p>
+            <div class="flex justify-center pt-2"><div class="loader"></div></div>
         </div>
 
         <!-- Success UI (unverändert) -->
@@ -128,7 +129,11 @@
             return null;
         }
 
-        const ort = findeOrt(new URLSearchParams(window.location.search).get('ort') || '');
+        // Wird verwendet, wenn die Seite ohne ?ort=... aufgerufen wird
+        const STANDARD_ORT = 'hvs-eg-toilette-dispo-herren';
+        const SCAN_PAUSE_MS = 1500;
+
+        const ort = findeOrt(new URLSearchParams(window.location.search).get('ort') || '') || findeOrt(STANDARD_ORT);
         let sendetGerade = false;
 
         // Gleiches Format wie bisher in der Spalte "etage", damit Admin und Auswertung weiter passen
@@ -137,13 +142,21 @@
         function init() {
             if (!ort) {
                 document.getElementById('current-location-label').innerText = 'Kein gültiger Ort';
-                document.getElementById('error-ui').classList.remove('hidden');
                 return;
             }
             document.getElementById('current-location-label').innerText = `${ort.standort} | ${ort.etage}`;
             document.getElementById('current-area-label').innerText = `${ort.bereich} (${ort.wc})`;
-            document.getElementById('main-ui').classList.remove('hidden');
+
+            // Kurz "Code für HVS wurde gescannt" anzeigen, dann zur Auswahl
+            document.getElementById('scan-title').innerText = `Code für ${ort.standort} wurde gescannt`;
+            document.getElementById('scan-text').innerText = `${ort.etage} · ${ort.bereich} (${ort.wc})`;
+            document.getElementById('scan-ui').classList.remove('hidden');
             checkStatus();
+
+            setTimeout(() => {
+                document.getElementById('scan-ui').classList.add('hidden');
+                document.getElementById('main-ui').classList.remove('hidden');
+            }, SCAN_PAUSE_MS);
         }
 
         async function checkStatus() {
